@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace EnterpriseSystemApp
 {
@@ -147,7 +148,8 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Search The Database =======");
                 Console.WriteLine("1. Test Database Connection");
                 Console.WriteLine("2. Search Therapists By Name");
-                Console.WriteLine("3. Return To Main Menu");
+                Console.WriteLine("3. Unpaid Balance Reports");
+                Console.WriteLine("4. Return To Main Menu");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -161,6 +163,9 @@ namespace EnterpriseSystemApp
                         SearchTherapistsByName();
                         break;
                     case "3":
+                        UnpaidBalanceMenu();
+                        break;
+                    case "4":
                         inSearchMenu = false;
                         break;
                     default:
@@ -226,6 +231,128 @@ namespace EnterpriseSystemApp
             }
 
             Console.WriteLine();
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void UnpaidBalanceMenu()
+        {
+            bool inUnpaidMenu = true;
+
+            while (inUnpaidMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Unpaid Balance Reports =======");
+                Console.WriteLine("1. Lifetime Unpaid Balance");
+                Console.WriteLine("2. Year-End Unpaid Balance");
+                Console.WriteLine("3. Month-End Unpaid Balance");
+                Console.WriteLine("4. Return To Search Menu");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ShowLifetimeUnpaidBalances();
+                        break;
+                    case "2":
+                        ShowYearEndUnpaidBalances();
+                        break;
+                    case "3":
+                        ShowMonthEndUnpaidBalances();
+                        break;
+                    case "4":
+                        inUnpaidMenu = false;
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void ShowLifetimeUnpaidBalances()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Lifetime Unpaid Balance =======");
+
+            var results = databaseManager.GetLifetimeUnpaidBalances();
+            DisplayUnpaidBalanceResults(results);
+        }
+
+        static void ShowYearEndUnpaidBalances()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Year-End Unpaid Balance =======");
+            Console.Write("Enter year (example: 2026): ");
+
+            string input = Console.ReadLine() ?? "";
+
+            if (!int.TryParse(input, out int year))
+            {
+                Console.WriteLine("Invalid year.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            var results = databaseManager.GetYearEndUnpaidBalances(year);
+            DisplayUnpaidBalanceResults(results);
+        }
+
+        static void ShowMonthEndUnpaidBalances()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Month-End Unpaid Balance =======");
+            Console.Write("Enter year (example: 2026): ");
+            string yearInput = Console.ReadLine() ?? "";
+
+            Console.Write("Enter month (1-12): ");
+            string monthInput = Console.ReadLine() ?? "";
+
+            if (!int.TryParse(yearInput, out int year) || !int.TryParse(monthInput, out int month) || month < 1 || month > 12)
+            {
+                Console.WriteLine("Invalid year or month.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            var results = databaseManager.GetMonthEndUnpaidBalances(year, month);
+            DisplayUnpaidBalanceResults(results);
+        }
+
+        static void DisplayUnpaidBalanceResults(List<UnpaidBalanceResult> results)
+        {
+            Console.WriteLine();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("No unpaid balance records found.");
+            }
+            else
+            {
+                foreach (var result in results)
+                {
+                    if (result.SessionId.StartsWith("Database error:"))
+                    {
+                        Console.WriteLine(result.SessionId);
+                    }
+                    else
+                    {
+                        decimal unpaidAmount = result.BalanceDue - result.AmountCollected;
+
+                        Console.WriteLine($"Session ID: {result.SessionId}");
+                        Console.WriteLine($"  Balance Due:      {result.BalanceDue:C}");
+                        Console.WriteLine($"  Amount Collected: {result.AmountCollected:C}");
+                        Console.WriteLine($"  Unpaid Amount:    {unpaidAmount:C}");
+                        Console.WriteLine();
+                    }
+                }
+            }
+
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
