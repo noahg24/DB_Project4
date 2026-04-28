@@ -146,16 +146,19 @@ namespace EnterpriseSystemApp
             {
                 Console.Clear();
                 Console.WriteLine("======= Search The Database =======");
+                Console.WriteLine("0. Return To Main Menu");
                 Console.WriteLine("1. Test Database Connection");
                 Console.WriteLine("2. Search Therapists By Name");
                 Console.WriteLine("3. Unpaid Balance Reports");
-                Console.WriteLine("4. Return To Main Menu");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
 
                 switch (choice)
                 {
+                    case "0":
+                        inSearchMenu = false;
+                        break;
                     case "1":
                         TestDatabaseConnection();
                         break;
@@ -164,9 +167,6 @@ namespace EnterpriseSystemApp
                         break;
                     case "3":
                         UnpaidBalanceMenu();
-                        break;
-                    case "4":
-                        inSearchMenu = false;
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -178,20 +178,46 @@ namespace EnterpriseSystemApp
 
         static void UpdateDatabase(Account account)
         {
-            Console.Clear();
-            Console.WriteLine("======= Update The Database =======");
-
             if (account.Role != "admin")
             {
+                Console.Clear();
+                Console.WriteLine("======= Update The Database =======");
                 Console.WriteLine("Access denied. Only admin users can update the database.");
-            }
-            else
-            {
-                Console.WriteLine("Update functionality will be added later.");
+                Console.WriteLine("Press Enter to return to the main menu...");
+                Console.ReadLine();
+                return;
             }
 
-            Console.WriteLine("Press Enter to return to the main menu...");
-            Console.ReadLine();
+            bool inUpdateMenu = true;
+
+            while (inUpdateMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Update The Database =======");
+                Console.WriteLine("0. Return To Main Menu");
+                Console.WriteLine("1. Add New Patient");
+                Console.WriteLine("2. Delete Patient");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inUpdateMenu = false;
+                        break;
+                    case "1":
+                        AddNewPatient();
+                        break;
+                    case "2":
+                        DeletePatient();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
         }
 
         // Methods for database search options
@@ -353,6 +379,86 @@ namespace EnterpriseSystemApp
                 }
             }
 
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        // Method for database update option
+        static void AddNewPatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Add New Patient =======");
+
+            Console.Write("Patient ID: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("Patient Name: ");
+            string patientName = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("Date of Birth (YYYY-MM-DD): ");
+            string dobInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(dobInput, out DateTime dob))
+            {
+                Console.WriteLine("Invalid date format.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Insurance Name (leave blank if none): ");
+            string insuranceName = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("Insurance Policy Number (leave blank if none): ");
+            string insurancePolicy = Console.ReadLine()?.Trim() ?? "";
+
+            bool success = databaseManager.InsertPatient(
+                patientId,
+                patientName,
+                dob,
+                insuranceName,
+                insurancePolicy,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void DeletePatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Delete Patient =======");
+
+            Console.Write("Enter Patient ID to delete: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                Console.WriteLine("Patient ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.Write($"Are you sure you want to delete patient {patientId}? (Y/N): ");
+            string confirm = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+            if (confirm != "Y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.DeletePatient(patientId, out string message);
+
+            Console.WriteLine();
+            Console.WriteLine(message);
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }

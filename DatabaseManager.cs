@@ -11,7 +11,56 @@ namespace EnterpriseSystemApp
         public DatabaseManager()
         {
             // Will need to be updated with final database schema and credentials
-            connectionString = "Server=localhost;Database=test_schema;User ID=root;Password=Plmko272SQLROOT97!;";
+            connectionString = "Server=localhost;Database=patient_portal;User ID=root;Password=Plmko272SQLROOT97!;";
+        }
+
+        public bool InsertPatient(
+            string patientId,
+            string patientName,
+            DateTime dob,
+            string insuranceName,
+            string insurancePolicy,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    INSERT INTO Patient
+                        (p_patid, p_patname, p_dob, p_insname, p_inspol)
+                    VALUES
+                        (@patientId, @patientName, @dob, @insuranceName, @insurancePolicy);";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@patientId", patientId);
+                command.Parameters.AddWithValue("@patientName", patientName);
+                command.Parameters.AddWithValue("@dob", dob);
+                command.Parameters.AddWithValue("@insuranceName",
+                    string.IsNullOrWhiteSpace(insuranceName) ? DBNull.Value : insuranceName);
+                command.Parameters.AddWithValue("@insurancePolicy",
+                    string.IsNullOrWhiteSpace(insurancePolicy) ? DBNull.Value : insurancePolicy);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Patient added successfully.";
+                    return true;
+                }
+
+                message = "Patient was not added.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
         }
 
         public bool TestConnection(out string message)
@@ -41,7 +90,7 @@ namespace EnterpriseSystemApp
 
                 string sql = @"
                     SELECT t_theraid, t_theraname
-                    FROM therapist
+                    FROM Therapist
                     WHERE t_theraname LIKE @name
                     ORDER BY t_theraname;";
 
@@ -80,7 +129,7 @@ namespace EnterpriseSystemApp
                     SELECT a_sessid,
                            SUM(a_baldue) AS bal_due,
                            SUM(a_amtcolld) AS amt_colld
-                    FROM accounting
+                    FROM Accounting
                     GROUP BY a_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
                     ORDER BY a_sessid;";
@@ -121,10 +170,10 @@ namespace EnterpriseSystemApp
                     SELECT s_sessid AS session_id,
                         SUM(a_baldue) AS balance_due,
                         SUM(a_amtcolld) AS amount_collected
-                    FROM therapy_session, accounting
+                    FROM PatientSession, Accounting
                     WHERE s_sessdate >= @startDate
-                    AND s_sessdate < @endDate
-                    AND s_sessid = a_sessid
+                        AND s_sessdate < @endDate
+                        AND s_sessid = a_sessid
                     GROUP BY s_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
                     ORDER BY s_sessid;";
@@ -168,10 +217,10 @@ namespace EnterpriseSystemApp
                     SELECT s_sessid AS session_id,
                         SUM(a_baldue) AS balance_due,
                         SUM(a_amtcolld) AS amount_collected
-                    FROM therapy_session, accounting
+                    FROM PatientSession, Accounting
                     WHERE s_sessdate >= @startDate
-                    AND s_sessdate < @endDate
-                    AND s_sessid = a_sessid
+                        AND s_sessdate < @endDate
+                        AND s_sessid = a_sessid
                     GROUP BY s_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
                     ORDER BY s_sessid;";
