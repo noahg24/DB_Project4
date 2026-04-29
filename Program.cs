@@ -771,6 +771,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("3. Self-Pay Payments");
                 Console.WriteLine("4. Average Payment Delay");
                 Console.WriteLine("5. Average Session Payoff Delay");
+                Console.WriteLine("6. Revenue - Custom Date Range");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -794,6 +795,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "5":
                         ShowAverageSessionPayoffDelay();
+                        break;
+                    case "6":
+                        ShowRevenueCustomDateRange();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -842,6 +846,40 @@ namespace EnterpriseSystemApp
             Console.Clear();
             Console.WriteLine("======= Average Session Payoff Delay =======");
             DisplaySearchResults(databaseManager.GetAverageSessionPayoffDelay());
+        }
+
+        static void ShowRevenueCustomDateRange()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Revenue - Custom Date Range =======");
+
+            Console.Write("Enter Start Date (YYYY-MM-DD): ");
+            string startInput = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("Enter End Date (YYYY-MM-DD): ");
+            string endInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(startInput, out DateTime startDate) ||
+                !DateTime.TryParse(endInput, out DateTime endDate))
+            {
+                Console.WriteLine("Invalid date format.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (endDate < startDate)
+            {
+                Console.WriteLine("End date cannot be before start date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            DisplaySearchResults(
+                databaseManager.GetRevenueCustomDateRange(
+                    startDate,
+                    endDate));
         }
 
         static void DisplaySearchResults(List<string> results)

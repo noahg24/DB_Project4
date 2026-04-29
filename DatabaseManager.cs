@@ -717,6 +717,17 @@ namespace EnterpriseSystemApp
                 ) t1;");
         }
 
+        public List<string> GetRevenueCustomDateRange(DateTime startDate, DateTime endDate)
+        {
+            return RunStringQuery(@"
+                SELECT SUM(a_amtcolld) AS total_collected
+                FROM Accounting
+                WHERE a_txdate >= @startDate
+                AND a_txdate <= @endDate;",
+                startDate,
+                endDate);
+        }
+
         private string FormatAccountingRow(MySqlDataReader reader)
         {
             string txId = reader["a_txid"].ToString() ?? "";
