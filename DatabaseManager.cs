@@ -347,6 +347,68 @@ namespace EnterpriseSystemApp
             return results;
         }
 
+        public List<string> GetPatientsWithOutstandingBalances()
+        {
+            return RunStringQuery(@"
+                SELECT p_patid,
+                    p_patname,
+                    SUM(a_baldue - a_amtcolld) AS balance_due
+                FROM Patient, Accounting
+                WHERE p_patid = a_payer
+                GROUP BY p_patid, p_patname
+                HAVING SUM(a_baldue - a_amtcolld) > 0
+                ORDER BY balance_due DESC;");
+        }
+
+        public List<string> GetPatientsWithMostSessions()
+        {
+            return RunStringQuery(@"
+                SELECT p_patid,
+                    p_patname,
+                    COUNT(*) AS num_sessions
+                FROM Patient, PatientSession
+                WHERE p_patid = ps_patid
+                GROUP BY p_patid, p_patname
+                ORDER BY num_sessions DESC;");
+        }
+
+        public List<string> GetPatientsCurrentlyInTreatment()
+        {
+            return RunStringQuery(@"
+                SELECT DISTINCT p_patid,
+                                p_patname
+                FROM Patient, Treatment
+                WHERE p_patid = tr_patid
+                AND tr_enddate IS NULL
+                ORDER BY p_patname;");
+        }
+
+        public List<string> GetPatientsSeenByMultipleTherapists()
+        {
+            return RunStringQuery(@"
+                SELECT p_patid,
+                    p_patname,
+                    COUNT(DISTINCT ps_theraid) AS therapist_count
+                FROM Patient, PatientSession
+                WHERE p_patid = ps_patid
+                GROUP BY p_patid, p_patname
+                HAVING COUNT(DISTINCT ps_theraid) > 1
+                ORDER BY therapist_count DESC;");
+        }
+
+        public List<string> GetPatientsWithNoSessions()
+        {
+            return RunStringQuery(@"
+                SELECT p_patid,
+                    p_patname
+                FROM Patient
+                WHERE p_patid NOT IN (
+                    SELECT ps_patid
+                    FROM PatientSession
+                )
+                ORDER BY p_patname;");
+        }
+
         public string GetSinglePatientById(string patientId)
         {
             try

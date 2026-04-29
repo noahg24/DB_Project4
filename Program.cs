@@ -155,7 +155,6 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("4. Unpaid Balance Reports");
                 Console.WriteLine("5. Payments Menu");
                 Console.WriteLine("6. Treatment Reports");
-                Console.WriteLine("7. Therapist Metrics");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -259,6 +258,11 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Patient Search Menu =======");
                 Console.WriteLine("0. Return To Search Menu");
                 Console.WriteLine("1. Search Patients By Name");
+                Console.WriteLine("2. Patients With Outstanding Balances");
+                Console.WriteLine("3. Patients With Most Sessions");
+                Console.WriteLine("4. Patients Currently In Treatment");
+                Console.WriteLine("5. Patients Seen By Multiple Therapists");
+                Console.WriteLine("6. Patients With No Sessions");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -270,6 +274,21 @@ namespace EnterpriseSystemApp
                         break;
                     case "1":
                         SearchPatientsByName();
+                        break;
+                    case "2":
+                        ShowPatientsWithOutstandingBalances();
+                        break;
+                    case "3":
+                        ShowPatientsWithMostSessions();
+                        break;
+                    case "4":
+                        ShowPatientsCurrentlyInTreatment();
+                        break;
+                    case "5":
+                        ShowPatientsSeenByMultipleTherapists();
+                        break;
+                    case "6":
+                        ShowPatientsWithNoSessions();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -584,6 +603,7 @@ namespace EnterpriseSystemApp
             DisplaySearchResults(databaseManager.GetAverageTherapistsPerTreatment());
         }
 
+        // Patient search options
         static void SearchPatientsByName()
         {
             Console.Clear();
@@ -611,6 +631,41 @@ namespace EnterpriseSystemApp
             Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
+        }
+
+        static void ShowPatientsWithOutstandingBalances()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients With Outstanding Balances =======");
+            DisplaySearchResults(databaseManager.GetPatientsWithOutstandingBalances());
+        }
+
+        static void ShowPatientsWithMostSessions()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients With Most Sessions =======");
+            DisplaySearchResults(databaseManager.GetPatientsWithMostSessions());
+        }
+
+        static void ShowPatientsCurrentlyInTreatment()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients Currently In Treatment =======");
+            DisplaySearchResults(databaseManager.GetPatientsCurrentlyInTreatment());
+        }
+
+        static void ShowPatientsSeenByMultipleTherapists()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients Seen By Multiple Therapists =======");
+            DisplaySearchResults(databaseManager.GetPatientsSeenByMultipleTherapists());
+        }
+
+        static void ShowPatientsWithNoSessions()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients With No Sessions =======");
+            DisplaySearchResults(databaseManager.GetPatientsWithNoSessions());
         }
 
         static void UnpaidBalanceMenu()
