@@ -971,9 +971,7 @@ namespace EnterpriseSystemApp
         {
             Console.WriteLine();
 
-            int rowCount = results.Count;
-
-            if (rowCount == 0)
+            if (results.Count == 0)
             {
                 Console.WriteLine("No records found.");
                 Console.WriteLine();
@@ -981,6 +979,25 @@ namespace EnterpriseSystemApp
                 Console.ReadLine();
                 return;
             }
+
+            List<string> dataRows = new List<string>();
+            List<string> summaryRows = new List<string>();
+
+            foreach (string row in results)
+            {
+                if (row.StartsWith("TOTAL") ||
+                    row.StartsWith("COMBINED TOTAL") ||
+                    row.StartsWith("---"))
+                {
+                    summaryRows.Add(row);
+                }
+                else
+                {
+                    dataRows.Add(row);
+                }
+            }
+
+            int rowCount = dataRows.Count;
 
             Console.WriteLine($"Total Rows Found: {rowCount}");
             Console.WriteLine();
@@ -1025,7 +1042,17 @@ namespace EnterpriseSystemApp
 
             for (int i = 0; i < rowsToShow; i++)
             {
-                Console.WriteLine(results[i]);
+                Console.WriteLine(dataRows[i]);
+            }
+
+            if (summaryRows.Count > 0)
+            {
+                Console.WriteLine();
+
+                foreach (string row in summaryRows)
+                {
+                    Console.WriteLine(row);
+                }
             }
 
             Console.WriteLine();
