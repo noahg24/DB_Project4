@@ -1283,5 +1283,183 @@ namespace EnterpriseSystemApp
                 return false;
             }
         }
+
+        public List<string> GetUnpaidTransactionsByPayer(string payer)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT a_txid, a_sessid, a_txdate, a_baldue, a_amtcolld, a_payer
+                    FROM Accounting
+                    WHERE a_payer = @payer
+                    AND a_baldue > 0
+                    ORDER BY a_txdate;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@payer", payer);
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string txId = reader["a_txid"].ToString() ?? "";
+                    string sessId = reader["a_sessid"].ToString() ?? "";
+                    string txDate = Convert.ToDateTime(reader["a_txdate"]).ToString("yyyy-MM-dd");
+                    decimal balDue = Convert.ToDecimal(reader["a_baldue"]);
+                    decimal amtColld = Convert.ToDecimal(reader["a_amtcolld"]);
+                    string payerValue = reader["a_payer"].ToString() ?? "";
+
+                    results.Add(
+                        $"Transaction ID: {txId} | Session ID: {sessId} | Date: {txDate} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Payer: {payerValue}"
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public bool AccountingTransactionExistsForPayerWithBalance(
+            string transactionId,
+            string payer,
+            out decimal currentBalance,
+            out string message)
+        {
+            currentBalance = 0;
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT a_baldue
+                    FROM Accounting
+                    WHERE a_txid = @transactionId
+                    AND a_payer = @payer
+                    AND a_baldue > 0
+                    LIMIT 1;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@payer", payer);
+
+                object? result = command.ExecuteScalar();
+
+                if (result == null)
+                {
+                    message = "No matching unpaid transaction found for that payer.";
+                    return false;
+                }
+
+                currentBalance = Convert.ToDecimal(result);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
+
+        public bool ApplyAccountingPayment(
+            string transactionId,
+            string payer,
+            decimal paymentAmount,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    UPDATE Accounting
+                    SET a_baldue = a_baldue - @paymentAmount,
+                        a_amtcolld = a_amtcolld + @paymentAmount
+                    WHERE a_txid = @transactionId
+                    AND a_payer = @payer
+                    AND a_baldue >= @paymentAmount;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@paymentAmount", paymentAmount);
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@payer", payer);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Payment applied successfully.";
+                    return true;
+                }
+
+                message = "Payment was not applied. Check that the transaction exists and the payment does not exceed the balance due.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
+
+        public bool InsertTreatment(
+            string therapistId,
+            string patientId,
+            DateTime startDate,
+            DateTime? endDate,
+            string treatCode,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    INSERT INTO Treatment
+                        (tr_theraid, tr_patid, tr_startdate, tr_enddate, tr_treatcode)
+                    VALUES
+                        (@therapistId, @patientId, @startDate, @endDate, @treatCode);";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@therapistId", therapistId);
+                command.Parameters.AddWithValue("@patientId", patientId);
+                command.Parameters.AddWithValue("@startDate", startDate);
+                command.Parameters.AddWithValue("@endDate", endDate.HasValue ? endDate.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@treatCode", treatCode);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Treatment added successfully.";
+                    return true;
+                }
+
+                message = "Treatment was not added.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
     }
 }

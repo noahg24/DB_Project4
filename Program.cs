@@ -23,9 +23,9 @@ namespace EnterpriseSystemApp
             while (running)
             {
                 Console.Clear();
-                Console.WriteLine("======================================");
-                Console.WriteLine("        Patient Portal System");
-                Console.WriteLine("======================================");
+                Console.WriteLine("====================================");
+                Console.WriteLine("        MyPatient System");
+                Console.WriteLine("====================================");
                 Console.WriteLine("1. Login");
                 Console.WriteLine("2. Create Account");
                 Console.WriteLine("3. Exit");
@@ -301,6 +301,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("1. Patient");
                 Console.WriteLine("2. Session");
                 Console.WriteLine("3. Accounting");
+                Console.WriteLine("4. Treatment");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -318,6 +319,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "3":
                         AccountingUpdateMenu();
+                        break;
+                    case "4":
+                        TreatmentUpdateMenu();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -428,6 +432,36 @@ namespace EnterpriseSystemApp
                         Console.WriteLine("Delete Accounting Transaction functionality will be added later.");
                         Console.WriteLine("Press Enter to continue...");
                         Console.ReadLine();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void TreatmentUpdateMenu()
+        {
+            bool inTreatmentMenu = true;
+
+            while (inTreatmentMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Treatment Update Menu =======");
+                Console.WriteLine("1. Add New Treatment");
+                Console.WriteLine("0. Return To Update Menu");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inTreatmentMenu = false;
+                        break;
+                    case "1":
+                        AddNewTreatment();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -1484,6 +1518,104 @@ namespace EnterpriseSystemApp
                 balanceDue,
                 amountCollected,
                 payer,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void AddNewTreatment()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Add New Treatment =======");
+
+            Console.Write("Patient ID: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (!databaseManager.PatientExists(patientId))
+            {
+                Console.WriteLine("No patient found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Therapist ID: ");
+            string therapistId = Console.ReadLine()?.Trim() ?? "";
+
+            if (!databaseManager.TherapistExists(therapistId))
+            {
+                Console.WriteLine("No therapist found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Treatment Code: ");
+            string treatCode = Console.ReadLine()?.Trim() ?? "";
+
+            if (!databaseManager.TreatmentCodeExists(treatCode))
+            {
+                Console.WriteLine("That treatment code does not exist.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.TherapistCanPerformTreatmentCode(therapistId, treatCode))
+            {
+                Console.WriteLine("This therapist does not have a skill that supports this treatment code.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Start Date (YYYY-MM-DD): ");
+            string startInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(startInput, out DateTime startDate))
+            {
+                Console.WriteLine("Invalid start date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("End Date (YYYY-MM-DD), or leave blank if ongoing: ");
+            string endInput = Console.ReadLine()?.Trim() ?? "";
+
+            DateTime? endDate = null;
+
+            if (!string.IsNullOrWhiteSpace(endInput))
+            {
+                if (!DateTime.TryParse(endInput, out DateTime parsedEndDate))
+                {
+                    Console.WriteLine("Invalid end date.");
+                    Console.WriteLine("Press Enter to continue...");
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (parsedEndDate < startDate)
+                {
+                    Console.WriteLine("End date cannot be before start date.");
+                    Console.WriteLine("Press Enter to continue...");
+                    Console.ReadLine();
+                    return;
+                }
+
+                endDate = parsedEndDate;
+            }
+
+            bool success = databaseManager.InsertTreatment(
+                therapistId,
+                patientId,
+                startDate,
+                endDate,
+                treatCode,
                 out string message
             );
 
