@@ -155,6 +155,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("4. Unpaid Balance Reports");
                 Console.WriteLine("5. Payments Menu");
                 Console.WriteLine("6. Treatment Reports");
+                Console.WriteLine("7. Therapist Metrics");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -168,10 +169,10 @@ namespace EnterpriseSystemApp
                         TestDatabaseConnection();
                         break;
                     case "2":
-                        SearchTherapistsByName();
+                        TherapistSearchMenu();
                         break;
                     case "3":
-                        SearchPatientsByName();
+                        PatientSearchMenu();
                         break;
                     case "4":
                         UnpaidBalanceMenu();
@@ -181,6 +182,66 @@ namespace EnterpriseSystemApp
                         break;
                     case "6":
                         TreatmentMenu();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void TherapistSearchMenu()
+        {
+            bool inTherapistMenu = true;
+
+            while (inTherapistMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Therapist Search Menu =======");
+                Console.WriteLine("0. Return To Search Menu");
+                Console.WriteLine("1. Search Therapists By Name");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inTherapistMenu = false;
+                        break;
+                    case "1":
+                        SearchTherapistsByName();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void PatientSearchMenu()
+        {
+            bool inPatientMenu = true;
+
+            while (inPatientMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Patient Search Menu =======");
+                Console.WriteLine("0. Return To Search Menu");
+                Console.WriteLine("1. Search Patients By Name");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inPatientMenu = false;
+                        break;
+                    case "1":
+                        SearchPatientsByName();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -431,6 +492,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("2. Year-End Unpaid Balance");
                 Console.WriteLine("3. Month-End Unpaid Balance");
                 Console.WriteLine("4. Custom Date Range");
+                Console.WriteLine("5. Patients With Unpaid Balances");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -451,6 +513,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "4":
                         ShowCustomRangeUnpaidBalances();
+                        break;
+                    case "5":
+                        ShowLifetimeUnpaidBalanceByPatient();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -547,6 +612,15 @@ namespace EnterpriseSystemApp
             DisplayUnpaidBalanceResults(results);
         }
 
+        static void ShowLifetimeUnpaidBalanceByPatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Lifetime Unpaid Balance By Patient =======");
+
+            var results = databaseManager.GetLifetimeUnpaidBalanceByPatient();
+            DisplaySearchResults(results);
+        }
+
         static void DisplayUnpaidBalanceResults(List<UnpaidBalanceResult> results)
         {
             Console.WriteLine();
@@ -593,6 +667,8 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("1. Out-Of-Network Insurance Payments");
                 Console.WriteLine("2. In-Network Insurance Payments");
                 Console.WriteLine("3. Self-Pay Payments");
+                Console.WriteLine("4. Average Payment Delay");
+                Console.WriteLine("5. Average Session Payoff Delay");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -610,6 +686,12 @@ namespace EnterpriseSystemApp
                         break;
                     case "3":
                         ShowSelfPayPayments();
+                        break;
+                    case "4":
+                        ShowAveragePaymentDelay();
+                        break;
+                    case "5":
+                        ShowAverageSessionPayoffDelay();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -644,6 +726,20 @@ namespace EnterpriseSystemApp
 
             var results = databaseManager.GetSelfPayPayments();
             DisplaySearchResults(results);
+        }
+
+        static void ShowAveragePaymentDelay()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Average Payment Delay =======");
+            DisplaySearchResults(databaseManager.GetAveragePaymentDelay());
+        }
+
+        static void ShowAverageSessionPayoffDelay()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Average Session Payoff Delay =======");
+            DisplaySearchResults(databaseManager.GetAverageSessionPayoffDelay());
         }
 
         static void DisplaySearchResults(List<string> results)

@@ -284,6 +284,33 @@ namespace EnterpriseSystemApp
         }
 
         // Unpaid balance methods
+        public List<string> GetLifetimeUnpaidBalanceByPatient()
+        {
+            return RunStringQuery(@"
+                WITH balance AS (
+                    SELECT
+                        a.a_payer,
+                        SUM(a.a_baldue) AS total_due,
+                        SUM(a.a_amtcolld) AS total_collected,
+                        SUM(a.a_baldue) - SUM(a.a_amtcolld) AS outstanding_balance
+                    FROM Accounting a
+                    GROUP BY a.a_payer
+                )
+                SELECT
+                    p.p_patid,
+                    p.p_patname,
+                    p.p_insname,
+                    p.p_inspol,
+                    b.outstanding_balance,
+                    CASE
+                        WHEN LENGTH(b.a_payer) = 8 THEN 'SELF_PAY'
+                        ELSE 'INSURANCE'
+                    END AS payer_type
+                FROM Patient p, balance b
+                WHERE p.p_patid = b.a_payer
+                AND b.outstanding_balance > 0
+                ORDER BY b.outstanding_balance DESC;");
+        }
         public List<UnpaidBalanceResult> GetLifetimeUnpaidBalances()
         {
             List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
@@ -581,6 +608,33 @@ namespace EnterpriseSystemApp
             }
 
             return results;
+        }
+
+        public List<string> GetAveragePaymentDelay()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(tx_delay) AS avg_payment_delay_days
+                FROM (
+                    SELECT DATEDIFF(MAX(a_txdate), ps_sessdate) AS tx_delay
+                    FROM PatientSession, Accounting
+                    WHERE ps_sessid = a_sessid
+                    GROUP BY ps_sessid, ps_sessdate
+                    HAVING SUM(a_baldue) = SUM(a_amtcolld)
+                ) t1;");
+        }
+
+        public List<string> GetAverageSessionPayoffDelay()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(payoff_delay) AS avg_payoff_delay_days
+                FROM (
+                    SELECT ps_sessid,
+                        DATEDIFF(MAX(a_txdate), MIN(a_txdate)) AS payoff_delay
+                    FROM PatientSession, Accounting
+                    WHERE ps_sessid = a_sessid
+                    GROUP BY ps_sessid
+                    HAVING SUM(a_baldue) - SUM(a_amtcolld) = 0
+                ) t1;");
         }
 
         private string FormatAccountingRow(MySqlDataReader reader)
