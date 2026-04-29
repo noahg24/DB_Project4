@@ -2056,7 +2056,7 @@ namespace EnterpriseSystemApp
         static void AddNewTreatment()
         {
             Console.Clear();
-            Console.WriteLine("======= Add New Treatment =======");
+            Console.WriteLine("======= Add New Treatment And Initial Session =======");
 
             Console.Write("Patient ID: ");
             string patientId = Console.ReadLine()?.Trim() ?? "";
@@ -2099,7 +2099,7 @@ namespace EnterpriseSystemApp
                 return;
             }
 
-            Console.Write("Start Date (YYYY-MM-DD): ");
+            Console.Write("Treatment Start Date (YYYY-MM-DD): ");
             string startInput = Console.ReadLine()?.Trim() ?? "";
 
             if (!DateTime.TryParse(startInput, out DateTime startDate))
@@ -2110,7 +2110,7 @@ namespace EnterpriseSystemApp
                 return;
             }
 
-            Console.Write("End Date (YYYY-MM-DD), or leave blank if ongoing: ");
+            Console.Write("Treatment End Date (YYYY-MM-DD), or leave blank if ongoing: ");
             string endInput = Console.ReadLine()?.Trim() ?? "";
 
             DateTime? endDate = null;
@@ -2136,12 +2136,51 @@ namespace EnterpriseSystemApp
                 endDate = parsedEndDate;
             }
 
-            bool success = databaseManager.InsertTreatment(
+            Console.WriteLine();
+            Console.WriteLine("Now enter information for the initial session tied to this treatment.");
+
+            string sessionId = databaseManager.GetNextPatientSessionId();
+            Console.WriteLine($"Generated Session ID: {sessionId}");
+
+            Console.Write("Session Date (YYYY-MM-DD): ");
+            string sessionDateInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(sessionDateInput, out DateTime sessionDate))
+            {
+                Console.WriteLine("Invalid session date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (sessionDate < startDate)
+            {
+                Console.WriteLine("Session date cannot be before treatment start date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (endDate.HasValue && sessionDate > endDate.Value)
+            {
+                Console.WriteLine("Session date cannot be after treatment end date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Session Notes (optional): ");
+            string sessionNotes = Console.ReadLine()?.Trim() ?? "";
+
+            bool success = databaseManager.InsertTreatmentWithInitialSession(
                 therapistId,
                 patientId,
                 startDate,
                 endDate,
                 treatCode,
+                sessionId,
+                sessionDate,
+                sessionNotes,
                 out string message
             );
 

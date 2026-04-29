@@ -1849,6 +1849,115 @@ namespace EnterpriseSystemApp
             }
         }
 
+        public string GetNextPatientSessionId()
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT MAX(CAST(ps_sessid AS UNSIGNED))
+                    FROM PatientSession;";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                object? result = command.ExecuteScalar();
+
+                int nextId = 1;
+
+                if (result != null && result != DBNull.Value)
+                {
+                    nextId = Convert.ToInt32(result) + 1;
+                }
+
+                return nextId.ToString("D7");   // 7 digits padded with zeros
+            }
+            catch
+            {
+                return "0000001";
+            }
+        }
+
+        // Insert Treatment methods
+        public bool InsertTreatmentWithInitialSession(
+            string therapistId,
+            string patientId,
+            DateTime startDate,
+            DateTime? endDate,
+            string treatCode,
+            string sessionId,
+            DateTime sessionDate,
+            string sessionNotes,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    string treatmentSql = @"
+                        INSERT INTO Treatment
+                            (tr_theraid, tr_patid, tr_startdate, tr_enddate, tr_treatcode)
+                        VALUES
+                            (@therapistId, @patientId, @startDate, @endDate, @treatCode);";
+
+                    using var treatmentCommand = new MySqlCommand(treatmentSql, connection, transaction);
+
+                    treatmentCommand.Parameters.AddWithValue("@therapistId", therapistId);
+                    treatmentCommand.Parameters.AddWithValue("@patientId", patientId);
+                    treatmentCommand.Parameters.AddWithValue("@startDate", startDate);
+                    treatmentCommand.Parameters.AddWithValue("@endDate", endDate.HasValue ? endDate.Value : DBNull.Value);
+                    treatmentCommand.Parameters.AddWithValue("@treatCode", treatCode);
+
+                    treatmentCommand.ExecuteNonQuery();
+
+                    int newTreatmentId = (int)treatmentCommand.LastInsertedId;
+
+                    string sessionSql = @"
+                        INSERT INTO PatientSession
+                            (ps_sessid, ps_sessdate, ps_patid, ps_sessnotes, ps_theraid, ps_treatcode, ps_treatid)
+                        VALUES
+                            (@sessionId, @sessionDate, @patientId, @sessionNotes, @therapistId, @treatCode, @treatmentId);";
+
+                    using var sessionCommand = new MySqlCommand(sessionSql, connection, transaction);
+
+                    sessionCommand.Parameters.AddWithValue("@sessionId", sessionId);
+                    sessionCommand.Parameters.AddWithValue("@sessionDate", sessionDate);
+                    sessionCommand.Parameters.AddWithValue("@patientId", patientId);
+                    sessionCommand.Parameters.AddWithValue("@sessionNotes",
+                        string.IsNullOrWhiteSpace(sessionNotes) ? DBNull.Value : sessionNotes);
+                    sessionCommand.Parameters.AddWithValue("@therapistId", therapistId);
+                    sessionCommand.Parameters.AddWithValue("@treatCode", treatCode);
+                    sessionCommand.Parameters.AddWithValue("@treatmentId", newTreatmentId);
+
+                    sessionCommand.ExecuteNonQuery();
+
+                    transaction.Commit();
+
+                    message = $"Treatment and initial session added successfully. Treatment ID: {newTreatmentId}, Session ID: {sessionId}";
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    message = $"Database error. Changes rolled back: {ex.Message}";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                message = $"Database connection error: {ex.Message}";
+                return false;
+            }
+        }
+
         public bool InsertTreatment(
             string therapistId,
             string patientId,
