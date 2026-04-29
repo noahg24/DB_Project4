@@ -23,9 +23,9 @@ namespace EnterpriseSystemApp
             while (running)
             {
                 Console.Clear();
-                Console.WriteLine("====================================");
+                Console.WriteLine("================================");
                 Console.WriteLine("        MyPatient System");
-                Console.WriteLine("====================================");
+                Console.WriteLine("================================");
                 Console.WriteLine("1. Login");
                 Console.WriteLine("2. Create Account");
                 Console.WriteLine("3. Exit");
