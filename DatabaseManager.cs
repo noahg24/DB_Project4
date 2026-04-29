@@ -162,6 +162,7 @@ namespace EnterpriseSystemApp
             }
         }
 
+        // Therapist methods
         public List<string> SearchTherapistsByName(string name)
         {
             List<string> results = new List<string>();
@@ -196,6 +197,85 @@ namespace EnterpriseSystemApp
             }
 
             return results;
+        }
+
+        public List<string> GetTreatmentCountPerTherapist(DateTime startDate, DateTime endDate)
+        {
+            return RunStringQuery(@"
+                SELECT tr_theraid, t_theraname, COUNT(*) AS treatment_count
+                FROM Treatment, Therapist
+                WHERE tr_theraid = t_theraid
+                AND tr_startdate >= @startDate
+                AND tr_startdate <= @endDate
+                GROUP BY tr_theraid, t_theraname
+                ORDER BY treatment_count DESC;",
+                startDate,
+                endDate);
+        }
+
+        public List<string> GetOpenTreatmentCasesByTherapist()
+        {
+            return RunStringQuery(@"
+                SELECT tr_theraid, t_theraname, COUNT(*) AS treatment_count
+                FROM Treatment, Therapist
+                WHERE tr_theraid = t_theraid
+                AND tr_enddate IS NULL
+                GROUP BY tr_theraid, t_theraname
+                ORDER BY treatment_count DESC;");
+        }
+
+        public List<string> GetAverageSessionsPerTherapist()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(session_count) AS avg_sess_per_thera
+                FROM (
+                    SELECT COUNT(*) AS session_count
+                    FROM PatientSession
+                    GROUP BY ps_theraid
+                ) t1;");
+        }
+
+        public List<string> GetAverageSkillsPerTherapist()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(num_skills) AS avg_num_skills
+                FROM (
+                    SELECT COUNT(*) AS num_skills
+                    FROM TherapistSkills
+                    GROUP BY ts_theraid
+                ) t1;");
+        }
+
+        public List<string> GetTreatmentCodeUsage()
+        {
+            return RunStringQuery(@"
+                SELECT tr_treatcode, COUNT(*) AS usage_count
+                FROM Treatment
+                GROUP BY tr_treatcode
+                ORDER BY usage_count DESC;");
+        }
+
+        public List<string> GetTherapistsPerTreatment()
+        {
+            return RunStringQuery(@"
+                SELECT ps_treatid,
+                    COUNT(DISTINCT ps_theraid) AS num_therapists,
+                    COUNT(ps_theraid) AS num_sessions
+                FROM PatientSession
+                GROUP BY ps_treatid
+                ORDER BY num_therapists DESC;");
+        }
+
+        public List<string> GetAverageTherapistsPerTreatment()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(therapist_count) AS avg_therapists_per_treatment
+                FROM (
+                    SELECT ps_treatid, COUNT(DISTINCT ps_theraid) AS therapist_count
+                    FROM PatientSession
+                    GROUP BY ps_treatid
+                    HAVING COUNT(DISTINCT ps_theraid) > 1
+                ) t1;");
         }
 
         public List<string> SearchPatientsByName(string patientName)
@@ -736,6 +816,41 @@ namespace EnterpriseSystemApp
                 connection.Open();
 
                 using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    List<string> cols = new List<string>();
+
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        cols.Add(reader[i].ToString() ?? "");
+                    }
+
+                    results.Add(string.Join(" | ", cols));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        private List<string> RunStringQuery(string sql, DateTime startDate, DateTime endDate)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@startDate", startDate);
+                command.Parameters.AddWithValue("@endDate", endDate);
+
                 using var reader = command.ExecuteReader();
 
                 while (reader.Read())
