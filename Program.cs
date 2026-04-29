@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
+using Mysqlx.Crud;
 using MySqlX.XDevAPI;
 
 namespace EnterpriseSystemApp
@@ -268,6 +269,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("5. Patients Seen By Multiple Therapists");
                 Console.WriteLine("6. Patients With No Sessions");
                 Console.WriteLine("7. Patients with Insurance on the Insurance Network");
+                Console.WriteLine("8. All Sessions For A Patient");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -297,6 +299,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "7":
                         ShowPatientsWithInNetworkInsurance();
+                        break;
+                    case "8":
+                        ShowAllSessionsForPatient();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -372,7 +377,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Patient Update Menu =======");
                 Console.WriteLine("0. Return To Update Menu");
                 Console.WriteLine("1. Add New Patient");
-                Console.WriteLine("2. Delete Patient");
+                Console.WriteLine("2. Delete Patient (Not Recommended)");
                 Console.WriteLine("3. Update Patient Information");
                 Console.Write("Select an option: ");
 
@@ -410,7 +415,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Session Update Menu =======");
                 Console.WriteLine("0. Return To Update Menu");
                 Console.WriteLine("1. Add New Session");
-                Console.WriteLine("2. Delete Session");
+                Console.WriteLine("2. Update Session Notes");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -424,9 +429,7 @@ namespace EnterpriseSystemApp
                         AddNewSession();
                         break;
                     case "2":
-                        Console.WriteLine("Delete Session functionality will be added later.");
-                        Console.WriteLine("Press Enter to continue...");
-                        Console.ReadLine();
+                        UpdateSessionNotes();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -733,6 +736,33 @@ namespace EnterpriseSystemApp
             Console.Clear();
             Console.WriteLine("======= Patients With In-Network Insurance =======");
             DisplaySearchResults(databaseManager.GetPatientsWithInNetworkInsurance());
+        }
+
+        static void ShowAllSessionsForPatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= View Sessions By Patient ID =======");
+
+            Console.Write("Enter Patient ID: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                Console.WriteLine("Patient ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.PatientExists(patientId))
+            {
+                Console.WriteLine("No patient found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            DisplaySearchResults(databaseManager.GetSessionsByPatientId(patientId));
         }
 
         // Unpaid balance search options
@@ -1531,6 +1561,69 @@ namespace EnterpriseSystemApp
 
             Console.WriteLine();
             Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void UpdateSessionNotes()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Update Session Notes =======");
+
+            Console.Write("Enter Session ID: ");
+            string sessionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                Console.WriteLine("Session ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            string currentInfo = databaseManager.GetSingleSessionById(sessionId);
+
+            if (string.IsNullOrWhiteSpace(currentInfo))
+            {
+                Console.WriteLine("No session found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (currentInfo.StartsWith("Database error:"))
+            {
+                Console.WriteLine(currentInfo);
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Current Session Information:");
+            Console.WriteLine(currentInfo);
+            Console.WriteLine();
+
+            Console.Write("Enter new session notes, or leave blank to clear notes: ");
+            string newNotes = Console.ReadLine()?.Trim() ?? "";
+
+            bool success = databaseManager.UpdateSessionNotes(
+                sessionId,
+                newNotes,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+
+            if (success)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Updated Session Information:");
+                Console.WriteLine(databaseManager.GetSingleSessionById(sessionId));
+            }
+
+            Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
