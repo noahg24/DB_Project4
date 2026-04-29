@@ -807,8 +807,12 @@ namespace EnterpriseSystemApp
                 SELECT DATE_FORMAT(tr_startdate, '%b %Y') AS month,
                     COUNT(*) AS treatments_started
                 FROM Treatment
-                GROUP BY DATE_FORMAT(tr_startdate, '%b %Y')
-                ORDER BY treatments_started DESC;");
+                GROUP BY DATE_FORMAT(tr_startdate, '%b %Y'),
+                        YEAR(tr_startdate),
+                        MONTH(tr_startdate)
+                ORDER BY treatments_started DESC,
+                        YEAR(tr_startdate),
+                        MONTH(tr_startdate);");
         }
 
         public List<string> GetPatientsNeverPursuedTreatment()
