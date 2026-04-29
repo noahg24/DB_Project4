@@ -481,9 +481,9 @@ namespace EnterpriseSystemApp
                 AND b.outstanding_balance > 0
                 ORDER BY b.outstanding_balance DESC;");
         }
-        public List<UnpaidBalanceResult> GetLifetimeUnpaidBalances()
+        public List<string> GetLifetimeUnpaidBalances()
         {
-            List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
+            List<string> results = new List<string>();
 
             try
             {
@@ -492,8 +492,8 @@ namespace EnterpriseSystemApp
 
                 string sql = @"
                     SELECT a_sessid,
-                           SUM(a_baldue) AS bal_due,
-                           SUM(a_amtcolld) AS amt_colld
+                        SUM(a_baldue) AS bal_due,
+                        SUM(a_amtcolld) AS amt_colld
                     FROM Accounting
                     GROUP BY a_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
@@ -505,23 +505,25 @@ namespace EnterpriseSystemApp
                 while (reader.Read())
                 {
                     string sessionId = reader["a_sessid"].ToString() ?? "";
-                    decimal balanceDue = reader["bal_due"] != DBNull.Value ? Convert.ToDecimal(reader["bal_due"]) : 0;
-                    decimal amountCollected = reader["amt_colld"] != DBNull.Value ? Convert.ToDecimal(reader["amt_colld"]) : 0;
+                    decimal balDue = reader["bal_due"] != DBNull.Value ? Convert.ToDecimal(reader["bal_due"]) : 0;
+                    decimal amtColld = reader["amt_colld"] != DBNull.Value ? Convert.ToDecimal(reader["amt_colld"]) : 0;
 
-                    results.Add(new UnpaidBalanceResult(sessionId, balanceDue, amountCollected));
+                    results.Add(
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                    );
                 }
             }
             catch (Exception ex)
             {
-                results.Add(new UnpaidBalanceResult($"Database error: {ex.Message}", 0, 0));
+                results.Add($"Database error: {ex.Message}");
             }
 
             return results;
         }
 
-        public List<UnpaidBalanceResult> GetYearEndUnpaidBalances(int year)
+        public List<string> GetYearEndUnpaidBalances(int year)
         {
-            List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
+            List<string> results = new List<string>();
 
             DateTime startDate = new DateTime(year, 1, 1);
             DateTime endDate = startDate.AddYears(1);
@@ -532,16 +534,16 @@ namespace EnterpriseSystemApp
                 connection.Open();
 
                 string sql = @"
-                    SELECT s_sessid AS session_id,
+                    SELECT ps_sessid AS session_id,
                         SUM(a_baldue) AS balance_due,
                         SUM(a_amtcolld) AS amount_collected
                     FROM PatientSession, Accounting
-                    WHERE s_sessdate >= @startDate
-                        AND s_sessdate < @endDate
-                        AND s_sessid = a_sessid
-                    GROUP BY s_sessid
+                    WHERE ps_sessdate >= @startDate
+                    AND ps_sessdate < @endDate
+                    AND ps_sessid = a_sessid
+                    GROUP BY ps_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
-                    ORDER BY s_sessid;";
+                    ORDER BY ps_sessid;";
 
                 using var command = new MySqlCommand(sql, connection);
                 command.Parameters.AddWithValue("@startDate", startDate);
@@ -552,23 +554,25 @@ namespace EnterpriseSystemApp
                 while (reader.Read())
                 {
                     string sessionId = reader["session_id"].ToString() ?? "";
-                    decimal balanceDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
-                    decimal amountCollected = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
+                    decimal balDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
+                    decimal amtColld = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
 
-                    results.Add(new UnpaidBalanceResult(sessionId, balanceDue, amountCollected));
+                    results.Add(
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                    );
                 }
             }
             catch (Exception ex)
             {
-                results.Add(new UnpaidBalanceResult($"Database error: {ex.Message}", 0, 0));
+                results.Add($"Database error: {ex.Message}");
             }
 
             return results;
         }
 
-        public List<UnpaidBalanceResult> GetMonthEndUnpaidBalances(int year, int month)
+        public List<string> GetMonthEndUnpaidBalances(int year, int month)
         {
-            List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
+            List<string> results = new List<string>();
 
             DateTime startDate = new DateTime(year, month, 1);
             DateTime endDate = startDate.AddMonths(1);
@@ -579,16 +583,16 @@ namespace EnterpriseSystemApp
                 connection.Open();
 
                 string sql = @"
-                    SELECT s_sessid AS session_id,
+                    SELECT ps_sessid AS session_id,
                         SUM(a_baldue) AS balance_due,
                         SUM(a_amtcolld) AS amount_collected
                     FROM PatientSession, Accounting
-                    WHERE s_sessdate >= @startDate
-                        AND s_sessdate < @endDate
-                        AND s_sessid = a_sessid
-                    GROUP BY s_sessid
+                    WHERE ps_sessdate >= @startDate
+                    AND ps_sessdate < @endDate
+                    AND ps_sessid = a_sessid
+                    GROUP BY ps_sessid
                     HAVING SUM(a_baldue) <> SUM(a_amtcolld)
-                    ORDER BY s_sessid;";
+                    ORDER BY ps_sessid;";
 
                 using var command = new MySqlCommand(sql, connection);
                 command.Parameters.AddWithValue("@startDate", startDate);
@@ -599,15 +603,17 @@ namespace EnterpriseSystemApp
                 while (reader.Read())
                 {
                     string sessionId = reader["session_id"].ToString() ?? "";
-                    decimal balanceDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
-                    decimal amountCollected = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
+                    decimal balDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
+                    decimal amtColld = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
 
-                    results.Add(new UnpaidBalanceResult(sessionId, balanceDue, amountCollected));
+                    results.Add(
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                    );
                 }
             }
             catch (Exception ex)
             {
-                results.Add(new UnpaidBalanceResult($"Database error: {ex.Message}", 0, 0));
+                results.Add($"Database error: {ex.Message}");
             }
 
             return results;
