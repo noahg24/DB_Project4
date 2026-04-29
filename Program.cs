@@ -415,7 +415,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Accounting Update Menu =======");
                 Console.WriteLine("0. Return To Update Menu");
                 Console.WriteLine("1. Add New Accounting Transaction");
-                Console.WriteLine("2. Delete Accounting Transaction");
+                Console.WriteLine("2. Update Accounting Transaction Payment");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -429,9 +429,7 @@ namespace EnterpriseSystemApp
                         AddNewAccountingTransaction();
                         break;
                     case "2":
-                        Console.WriteLine("Delete Accounting Transaction functionality will be added later.");
-                        Console.WriteLine("Press Enter to continue...");
-                        Console.ReadLine();
+                        UpdateAccountingTransactionPayment();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -1518,6 +1516,108 @@ namespace EnterpriseSystemApp
                 balanceDue,
                 amountCollected,
                 payer,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void UpdateAccountingTransactionPayment()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Update Accounting Transaction Payment =======");
+
+            Console.Write("Enter payer name or patient ID: ");
+            string payer = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(payer))
+            {
+                Console.WriteLine("Payer cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Unpaid transactions for this payer:");
+
+            List<string> transactions = databaseManager.GetUnpaidTransactionsByPayer(payer);
+
+            if (transactions.Count == 0)
+            {
+                Console.WriteLine("No unpaid transactions found for that payer.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            foreach (string transaction in transactions)
+            {
+                Console.WriteLine(transaction);
+            }
+
+            Console.WriteLine();
+            Console.Write("Enter Transaction ID to update: ");
+            string transactionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                Console.WriteLine("Transaction ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool found = databaseManager.AccountingTransactionExistsForPayerWithBalance(
+                transactionId,
+                payer,
+                out decimal currentBalance,
+                out string lookupMessage
+            );
+
+            if (!found)
+            {
+                Console.WriteLine(lookupMessage);
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine($"Current Balance Due: {currentBalance:C}");
+            Console.Write("Enter payment amount: ");
+            string paymentInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!decimal.TryParse(paymentInput, out decimal paymentAmount))
+            {
+                Console.WriteLine("Invalid payment amount.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (paymentAmount <= 0)
+            {
+                Console.WriteLine("Payment amount must be greater than 0.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (paymentAmount > currentBalance)
+            {
+                Console.WriteLine("Payment amount cannot exceed current balance due.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.ApplyAccountingPayment(
+                transactionId,
+                payer,
+                paymentAmount,
                 out string message
             );
 
