@@ -153,6 +153,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("3. Search Patients By Name");
                 Console.WriteLine("4. Unpaid Balance Reports");
                 Console.WriteLine("5. Payments Menu");
+                Console.WriteLine("6. Treatment Reports");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -176,6 +177,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "5":
                         PaymentsMenu();
+                        break;
+                    case "6":
+                        TreatmentMenu();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -664,6 +668,110 @@ namespace EnterpriseSystemApp
             Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
+        }
+
+        // Methods for treatment reports search options
+        static void TreatmentMenu()
+        {
+            bool inTreatmentMenu = true;
+
+            while (inTreatmentMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Treatment Reports =======");
+                Console.WriteLine("0. Return To Search Menu");
+                Console.WriteLine("1. Number Of Treatments Per Patient");
+                Console.WriteLine("2. Top 5 Patients With Highest Number Of Treatments");
+                Console.WriteLine("3. Number Of On-Going Treatments");
+                Console.WriteLine("4. Average Number Of Treatments Per Patient");
+                Console.WriteLine("5. Peak Months For Treatment");
+                Console.WriteLine("6. Number Of Incomplete Treatments");
+                Console.WriteLine("7. Patients Who Never Pursued Treatment");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inTreatmentMenu = false;
+                        break;
+                    case "1":
+                        ShowTreatmentCountPerPatient();
+                        break;
+                    case "2":
+                        ShowTop5PatientsTreatments();
+                        break;
+                    case "3":
+                        ShowOngoingTreatments();
+                        break;
+                    case "4":
+                        ShowAverageTreatmentsPerPatient();
+                        break;
+                    case "5":
+                        ShowPeakMonthsForTreatment();
+                        break;
+                    case "6":
+                        ShowIncompleteTreatments();
+                        break;
+                    case "7":
+                        ShowPatientsNeverPursuedTreatment();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void ShowTreatmentCountPerPatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Number Of Treatments Per Patient =======");
+            DisplaySearchResults(databaseManager.GetTreatmentCountPerPatient());
+        }
+
+        static void ShowTop5PatientsTreatments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Top 5 Patients By Treatments =======");
+            DisplaySearchResults(databaseManager.GetTop5PatientsTreatments());
+        }
+
+        static void ShowOngoingTreatments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= On-Going Treatments =======");
+            DisplaySearchResults(databaseManager.GetOngoingTreatments());
+        }
+
+        static void ShowAverageTreatmentsPerPatient()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Average Treatments Per Patient =======");
+            DisplaySearchResults(databaseManager.GetAverageTreatmentsPerPatient());
+        }
+
+        static void ShowPeakMonthsForTreatment()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Peak Months For Treatment =======");
+            DisplaySearchResults(databaseManager.GetPeakMonthsForTreatment());
+        }
+
+        static void ShowIncompleteTreatments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Incomplete Treatments =======");
+            DisplaySearchResults(databaseManager.GetIncompleteTreatments());
+        }
+
+        static void ShowPatientsNeverPursuedTreatment()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients Who Never Pursued Treatment =======");
+            DisplaySearchResults(databaseManager.GetPatientsNeverPursuedTreatment());
         }
 
         // Method for database update option

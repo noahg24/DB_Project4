@@ -594,5 +594,108 @@ namespace EnterpriseSystemApp
 
             return $"Transaction ID: {txId} | Session ID: {sessId} | Date: {txDate} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Payer: {payer}";
         }
+
+        // Treatment analysis methods
+        public List<string> GetTreatmentCountPerPatient()
+        {
+            return RunStringQuery(@"
+                SELECT tr_patid, COUNT(*) AS treatment_count
+                FROM Treatment
+                GROUP BY tr_patid
+                ORDER BY treatment_count DESC;");
+        }
+
+        public List<string> GetTop5PatientsTreatments()
+        {
+            return RunStringQuery(@"
+                SELECT tr_patid, COUNT(*) AS treatment_count
+                FROM Treatment
+                GROUP BY tr_patid
+                ORDER BY treatment_count DESC
+                LIMIT 5;");
+        }
+
+        public List<string> GetOngoingTreatments()
+        {
+            return RunStringQuery(@"
+                SELECT DISTINCT tr_patid AS treatment_ongoing
+                FROM Treatment
+                WHERE tr_enddate IS NULL;");
+        }
+
+        public List<string> GetAverageTreatmentsPerPatient()
+        {
+            return RunStringQuery(@"
+                SELECT AVG(treatment_count) AS avg_treatments_per_patient
+                FROM (
+                    SELECT tr_patid, COUNT(*) AS treatment_count
+                    FROM Treatment
+                    GROUP BY tr_patid
+                ) t1;");
+        }
+
+        public List<string> GetPeakMonthsForTreatment()
+        {
+            return RunStringQuery(@"
+                SELECT DATE_FORMAT(tr_startdate, '%b %Y') AS month,
+                    COUNT(*) AS treatments_started
+                FROM Treatment
+                GROUP BY YEAR(tr_startdate), MONTH(tr_startdate)
+                ORDER BY treatments_started DESC;");
+        }
+
+        public List<string> GetIncompleteTreatments()
+        {
+            return RunStringQuery(@"
+                SELECT DISTINCT t1.tr_patid
+                FROM Treatment t1, Treatment t2
+                WHERE t1.tr_patid = t2.tr_patid
+                AND t1.tr_treatid <> t2.tr_treatid
+                AND t1.tr_startdate < IFNULL(t2.tr_enddate, CURDATE())
+                AND t2.tr_startdate < t1.tr_startdate;");
+        }
+
+        public List<string> GetPatientsNeverPursuedTreatment()
+        {
+            return RunStringQuery(@"
+                SELECT p_patid
+                FROM Patient
+                WHERE p_patid NOT IN (
+                    SELECT ps_patid
+                    FROM PatientSession
+                );");
+        }
+
+        private List<string> RunStringQuery(string sql)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    List<string> cols = new List<string>();
+
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        cols.Add(reader[i].ToString() ?? "");
+                    }
+
+                    results.Add(string.Join(" | ", cols));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
     }
 }
