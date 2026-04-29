@@ -14,6 +14,7 @@ namespace EnterpriseSystemApp
             connectionString = "Server=localhost;Database=patient_portal;User ID=root;Password=Plmko272SQLROOT97!;";
         }
 
+        // Patient management methods
         public bool InsertPatient(
             string patientId,
             string patientName,
@@ -84,6 +85,54 @@ namespace EnterpriseSystemApp
                 if (rowsAffected == 1)
                 {
                     message = "Patient deleted successfully.";
+                    return true;
+                }
+
+                message = "No patient found with that ID.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
+
+        public bool UpdatePatientInfo(
+            string patientId,
+            string newName,
+            string newInsuranceName,
+            string newInsurancePolicy,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    UPDATE Patient
+                    SET p_patname = @newName,
+                        p_insname = @newInsuranceName,
+                        p_inspol = @newInsurancePolicy
+                    WHERE p_patid = @patientId;";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@patientId", patientId);
+                command.Parameters.AddWithValue("@newName", newName);
+                command.Parameters.AddWithValue("@newInsuranceName",
+                    string.IsNullOrWhiteSpace(newInsuranceName) ? DBNull.Value : newInsuranceName);
+                command.Parameters.AddWithValue("@newInsurancePolicy",
+                    string.IsNullOrWhiteSpace(newInsurancePolicy) ? DBNull.Value : newInsurancePolicy);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Patient information updated successfully.";
                     return true;
                 }
 
@@ -188,6 +237,50 @@ namespace EnterpriseSystemApp
             }
 
             return results;
+        }
+
+        public string GetSinglePatientById(string patientId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT p_patid, p_patname, p_dob, p_insname, p_inspol
+                    FROM Patient
+                    WHERE p_patid = @patientId
+                    LIMIT 1;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                using var reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    string id = reader["p_patid"].ToString() ?? "";
+                    string name = reader["p_patname"].ToString() ?? "";
+                    string dob = Convert.ToDateTime(reader["p_dob"]).ToString("yyyy-MM-dd");
+                    string insurance =
+                        reader["p_insname"] == DBNull.Value
+                        ? "None"
+                        : reader["p_insname"].ToString() ?? "";
+
+                    string policy =
+                        reader["p_inspol"] == DBNull.Value
+                        ? "None"
+                        : reader["p_inspol"].ToString() ?? "";
+
+                    return $"ID: {id} | Name: {name} | DOB: {dob} | Insurance: {insurance} | Policy: {policy}";
+                }
+
+                return "";
+            }
+            catch (Exception ex)
+            {
+                return $"Database error: {ex.Message}";
+            }
         }
 
         // Unpaid balance methods
@@ -318,6 +411,69 @@ namespace EnterpriseSystemApp
             catch (Exception ex)
             {
                 results.Add(new UnpaidBalanceResult($"Database error: {ex.Message}", 0, 0));
+            }
+
+            return results;
+        }
+
+        public List<UnpaidBalanceResult> GetCustomRangeUnpaidBalances(
+            DateTime startDate,
+            DateTime endDate)
+        {
+            List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT ps_sessid AS session_id,
+                        SUM(a_baldue) AS balance_due,
+                        SUM(a_amtcolld) AS amount_collected
+                    FROM PatientSession, Accounting
+                    WHERE ps_sessdate >= @startDate
+                    AND ps_sessdate <= @endDate
+                    AND ps_sessid = a_sessid
+                    GROUP BY ps_sessid
+                    HAVING SUM(a_baldue) <> SUM(a_amtcolld)
+                    ORDER BY ps_sessid;";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@startDate", startDate);
+                command.Parameters.AddWithValue("@endDate", endDate);
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string sessionId = reader["session_id"].ToString() ?? "";
+
+                    decimal balanceDue =
+                        reader["balance_due"] == DBNull.Value
+                        ? 0
+                        : Convert.ToDecimal(reader["balance_due"]);
+
+                    decimal amountCollected =
+                        reader["amount_collected"] == DBNull.Value
+                        ? 0
+                        : Convert.ToDecimal(reader["amount_collected"]);
+
+                    results.Add(
+                        new UnpaidBalanceResult(
+                            sessionId,
+                            balanceDue,
+                            amountCollected));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add(
+                    new UnpaidBalanceResult(
+                        $"Database error: {ex.Message}",
+                        0,
+                        0));
             }
 
             return results;

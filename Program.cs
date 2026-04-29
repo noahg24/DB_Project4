@@ -244,6 +244,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("0. Return To Update Menu");
                 Console.WriteLine("1. Add New Patient");
                 Console.WriteLine("2. Delete Patient");
+                Console.WriteLine("3. Update Patient Information");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -258,6 +259,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "2":
                         DeletePatient();
+                        break;
+                    case "3":
+                        UpdatePatientInfo();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -425,6 +429,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("1. Lifetime Unpaid Balance");
                 Console.WriteLine("2. Year-End Unpaid Balance");
                 Console.WriteLine("3. Month-End Unpaid Balance");
+                Console.WriteLine("4. Custom Date Range");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -442,6 +447,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "3":
                         ShowMonthEndUnpaidBalances();
+                        break;
+                    case "4":
+                        ShowCustomRangeUnpaidBalances();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -499,6 +507,42 @@ namespace EnterpriseSystemApp
             }
 
             var results = databaseManager.GetMonthEndUnpaidBalances(year, month);
+            DisplayUnpaidBalanceResults(results);
+        }
+
+        static void ShowCustomRangeUnpaidBalances()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Custom Date Range Unpaid Balance =======");
+
+            Console.Write("Enter Start Date (YYYY-MM-DD): ");
+            string startInput = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("Enter End Date (YYYY-MM-DD): ");
+            string endInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(startInput, out DateTime startDate) ||
+                !DateTime.TryParse(endInput, out DateTime endDate))
+            {
+                Console.WriteLine("Invalid date format.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (endDate < startDate)
+            {
+                Console.WriteLine("End date cannot be before start date.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            var results =
+                databaseManager.GetCustomRangeUnpaidBalances(
+                    startDate,
+                    endDate);
+
             DisplayUnpaidBalanceResults(results);
         }
 
@@ -695,6 +739,79 @@ namespace EnterpriseSystemApp
             }
 
             bool success = databaseManager.DeletePatient(patientId, out string message);
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void UpdatePatientInfo()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Update Patient Information =======");
+
+            Console.Write("Enter Patient ID to update: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                Console.WriteLine("Patient ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+
+            string currentInfo = databaseManager.GetSinglePatientById(patientId);
+
+            if (string.IsNullOrWhiteSpace(currentInfo))
+            {
+                Console.WriteLine("No patient found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (currentInfo.StartsWith("Database error:"))
+            {
+                Console.WriteLine(currentInfo);
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("Current Patient Information:");
+            Console.WriteLine(currentInfo);
+            Console.WriteLine();
+            Console.WriteLine("Patient ID and Date of Birth cannot be changed.");
+            Console.WriteLine();
+
+            Console.Write("New Patient Name: ");
+            string newName = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(newName))
+            {
+                Console.WriteLine("Patient name cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("New Insurance Name (leave blank if none): ");
+            string newInsuranceName = Console.ReadLine()?.Trim() ?? "";
+
+            Console.Write("New Insurance Policy Number (leave blank if none): ");
+            string newInsurancePolicy = Console.ReadLine()?.Trim() ?? "";
+
+            bool success = databaseManager.UpdatePatientInfo(
+                patientId,
+                newName,
+                newInsuranceName,
+                newInsurancePolicy,
+                out string message
+            );
 
             Console.WriteLine();
             Console.WriteLine(message);
