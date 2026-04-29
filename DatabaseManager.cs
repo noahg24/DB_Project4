@@ -484,6 +484,7 @@ namespace EnterpriseSystemApp
         public List<string> GetLifetimeUnpaidBalances()
         {
             List<string> results = new List<string>();
+            decimal totalOutstanding = 0;
 
             try
             {
@@ -508,10 +509,16 @@ namespace EnterpriseSystemApp
                     decimal balDue = reader["bal_due"] != DBNull.Value ? Convert.ToDecimal(reader["bal_due"]) : 0;
                     decimal amtColld = reader["amt_colld"] != DBNull.Value ? Convert.ToDecimal(reader["amt_colld"]) : 0;
 
+                    decimal outstanding = balDue - amtColld;
+                    totalOutstanding += outstanding;
+
                     results.Add(
-                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Unpaid: {outstanding:C}"
                     );
                 }
+
+                results.Add("--------------------------------------------------");
+                results.Add($"TOTAL UNPAID BALANCE: {totalOutstanding:C}");
             }
             catch (Exception ex)
             {
@@ -524,6 +531,7 @@ namespace EnterpriseSystemApp
         public List<string> GetYearEndUnpaidBalances(int year)
         {
             List<string> results = new List<string>();
+            decimal totalOutstanding = 0;
 
             DateTime startDate = new DateTime(year, 1, 1);
             DateTime endDate = startDate.AddYears(1);
@@ -557,10 +565,16 @@ namespace EnterpriseSystemApp
                     decimal balDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
                     decimal amtColld = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
 
+                    decimal outstanding = balDue - amtColld;
+                    totalOutstanding += outstanding;
+
                     results.Add(
-                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Unpaid: {outstanding:C}"
                     );
                 }
+
+                results.Add("--------------------------------------------------");
+                results.Add($"TOTAL UNPAID BALANCE FOR {year}: {totalOutstanding:C}");
             }
             catch (Exception ex)
             {
@@ -573,6 +587,7 @@ namespace EnterpriseSystemApp
         public List<string> GetMonthEndUnpaidBalances(int year, int month)
         {
             List<string> results = new List<string>();
+            decimal totalOutstanding = 0;
 
             DateTime startDate = new DateTime(year, month, 1);
             DateTime endDate = startDate.AddMonths(1);
@@ -606,10 +621,16 @@ namespace EnterpriseSystemApp
                     decimal balDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
                     decimal amtColld = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
 
+                    decimal outstanding = balDue - amtColld;
+                    totalOutstanding += outstanding;
+
                     results.Add(
-                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C}"
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Unpaid: {outstanding:C}"
                     );
                 }
+
+                results.Add("--------------------------------------------------");
+                results.Add($"TOTAL UNPAID BALANCE FOR {month}/{year}: {totalOutstanding:C}");
             }
             catch (Exception ex)
             {
