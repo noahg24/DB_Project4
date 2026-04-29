@@ -2224,6 +2224,7 @@ namespace EnterpriseSystemApp
 
             Console.Write("Insurance Provider Name to delete: ");
             string insuranceName = Console.ReadLine()?.Trim() ?? "";
+            if (!ValidateAndPrint(insuranceName)) return;
 
             if (string.IsNullOrWhiteSpace(insuranceName))
             {
@@ -2254,6 +2255,96 @@ namespace EnterpriseSystemApp
             Console.WriteLine(message);
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
+        }
+
+        // Input Validation Methods (MAY NOT INCLUDE, LOTS OF WORK)
+        static bool IsSafeUserInput(string input, out string message)
+        {
+            message = "";
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                message = "Input cannot be blank.";
+                return false;
+            }
+
+            string lowered = input.ToLower();
+
+            string[] blockedPatterns =
+            {
+                "--",
+                ";",
+                "/*",
+                "*/",
+                " xp_",
+                " drop ",
+                " delete ",
+                " insert ",
+                " update ",
+                " alter ",
+                " create ",
+                " truncate ",
+                " union ",
+                " select ",
+                " exec ",
+                " execute "
+            };
+
+            foreach (string pattern in blockedPatterns)
+            {
+                if (lowered.Contains(pattern))
+                {
+                    message = "Invalid input. Possible SQL injection attempt detected.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool ValidateAndPrint(string input)
+        {
+            if (!IsSafeUserInput(input, out string message))
+            {
+                Console.WriteLine(message);
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return false;
+            }
+            return true;
+        }
+
+        static bool IsSafeTextInput(string input, out string message)
+        {
+            message = "";
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                message = "Input cannot be blank.";
+                return false;
+            }
+
+            string[] blockedPatterns =
+            {
+                "--",
+                ";",
+                "/*",
+                "*/",
+                "'",
+                "\"",
+                "="
+            };
+
+            foreach (string pattern in blockedPatterns)
+            {
+                if (input.Contains(pattern))
+                {
+                    message = "Invalid characters detected in input.";
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
