@@ -63,6 +63,40 @@ namespace EnterpriseSystemApp
             }
         }
 
+        public bool DeletePatient(string patientId, out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    DELETE FROM Patient
+                    WHERE p_patid = @patientId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Patient deleted successfully.";
+                    return true;
+                }
+
+                message = "No patient found with that ID.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
+
         public bool TestConnection(out string message)
         {
             try
@@ -105,6 +139,47 @@ namespace EnterpriseSystemApp
                     string therapistName = reader["t_theraname"].ToString() ?? "";
 
                     results.Add($"ID: {therapistId} | Name: {therapistName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public List<string> SearchPatientsByName(string patientName)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT p_patid, p_patname, p_dob, p_insname, p_inspol
+                    FROM Patient
+                    WHERE p_patname LIKE @patientName
+                    ORDER BY p_patname;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientName", "%" + patientName + "%");
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string patientId = reader["p_patid"].ToString() ?? "";
+                    string name = reader["p_patname"].ToString() ?? "";
+                    string dob = Convert.ToDateTime(reader["p_dob"]).ToString("yyyy-MM-dd");
+                    string insurance = reader["p_insname"] == DBNull.Value ? "None" : reader["p_insname"].ToString()!;
+                    string policy = reader["p_inspol"] == DBNull.Value ? "None" : reader["p_inspol"].ToString()!;
+
+                    results.Add(
+                        $"ID: {patientId} | Name: {name} | DOB: {dob} | Insurance: {insurance} | Policy: {policy}"
+                    );
                 }
             }
             catch (Exception ex)
@@ -246,6 +321,122 @@ namespace EnterpriseSystemApp
             }
 
             return results;
+        }
+
+        // Payments by WHO? methods
+        public List<string> GetOutOfNetworkInsurancePayments()
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT *
+                    FROM Accounting
+                    WHERE a_payer NOT IN (
+                            SELECT i_insname
+                            FROM InsuranceNetwork
+                        )
+                    AND a_payer NOT IN (
+                            SELECT p_patid
+                            FROM Patient
+                        );";
+
+                using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    results.Add(FormatAccountingRow(reader));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public List<string> GetInNetworkInsurancePayments()
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT *
+                    FROM Accounting
+                    WHERE a_payer IN (
+                            SELECT i_insname
+                            FROM InsuranceNetwork
+                        );";
+
+                using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    results.Add(FormatAccountingRow(reader));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public List<string> GetSelfPayPayments()
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT *
+                    FROM Accounting
+                    WHERE a_payer IN (
+                            SELECT p_patid
+                            FROM Patient
+                        );";
+
+                using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    results.Add(FormatAccountingRow(reader));
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        private string FormatAccountingRow(MySqlDataReader reader)
+        {
+            string txId = reader["a_txid"].ToString() ?? "";
+            string sessId = reader["a_sessid"].ToString() ?? "";
+            string txDate = Convert.ToDateTime(reader["a_txdate"]).ToString("yyyy-MM-dd");
+            decimal balDue = Convert.ToDecimal(reader["a_baldue"]);
+            decimal amtColld = Convert.ToDecimal(reader["a_amtcolld"]);
+            string payer = reader["a_payer"].ToString() ?? "";
+
+            return $"Transaction ID: {txId} | Session ID: {sessId} | Date: {txDate} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Payer: {payer}";
         }
     }
 }

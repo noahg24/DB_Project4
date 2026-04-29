@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MySqlX.XDevAPI;
 
 namespace EnterpriseSystemApp
 {
@@ -149,7 +150,9 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("0. Return To Main Menu");
                 Console.WriteLine("1. Test Database Connection");
                 Console.WriteLine("2. Search Therapists By Name");
-                Console.WriteLine("3. Unpaid Balance Reports");
+                Console.WriteLine("3. Search Patients By Name");
+                Console.WriteLine("4. Unpaid Balance Reports");
+                Console.WriteLine("5. Payments Menu");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -166,7 +169,13 @@ namespace EnterpriseSystemApp
                         SearchTherapistsByName();
                         break;
                     case "3":
+                        SearchPatientsByName();
+                        break;
+                    case "4":
                         UnpaidBalanceMenu();
+                        break;
+                    case "5":
+                        PaymentsMenu();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -195,8 +204,9 @@ namespace EnterpriseSystemApp
                 Console.Clear();
                 Console.WriteLine("======= Update The Database =======");
                 Console.WriteLine("0. Return To Main Menu");
-                Console.WriteLine("1. Add New Patient");
-                Console.WriteLine("2. Delete Patient");
+                Console.WriteLine("1. Patient");
+                Console.WriteLine("2. Session");
+                Console.WriteLine("3. Accounting");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -207,10 +217,123 @@ namespace EnterpriseSystemApp
                         inUpdateMenu = false;
                         break;
                     case "1":
+                        PatientUpdateMenu();
+                        break;
+                    case "2":
+                        SessionUpdateMenu();
+                        break;
+                    case "3":
+                        AccountingUpdateMenu();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void PatientUpdateMenu()
+        {
+            bool inPatientMenu = true;
+
+            while (inPatientMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Patient Update Menu =======");
+                Console.WriteLine("0. Return To Update Menu");
+                Console.WriteLine("1. Add New Patient");
+                Console.WriteLine("2. Delete Patient");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inPatientMenu = false;
+                        break;         
+                    case "1":
                         AddNewPatient();
                         break;
                     case "2":
                         DeletePatient();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void SessionUpdateMenu()
+        {
+            bool inSessionMenu = true;
+
+            while (inSessionMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Session Update Menu =======");
+                Console.WriteLine("0. Return To Update Menu");
+                Console.WriteLine("1. Add New Session");
+                Console.WriteLine("2. Delete Session");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inSessionMenu = false;
+                        break;
+                    case "1":
+                        Console.WriteLine("Add New Session functionality will be added later.");
+                        Console.WriteLine("Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+                    case "2":
+                        Console.WriteLine("Delete Session functionality will be added later.");
+                        Console.WriteLine("Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void AccountingUpdateMenu()
+        {
+            bool inAccountingMenu = true;
+
+            while (inAccountingMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Accounting Update Menu =======");
+                Console.WriteLine("0. Return To Update Menu");
+                Console.WriteLine("1. Add New Accounting Transaction");
+                Console.WriteLine("2. Delete Accounting Transaction");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inAccountingMenu = false;
+                        break;
+                    case "1":
+                        Console.WriteLine("Add New Accounting Transaction functionality will be added later.");
+                        Console.WriteLine("Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+                    case "2":
+                        Console.WriteLine("Delete Accounting Transaction functionality will be added later.");
+                        Console.WriteLine("Press Enter to continue...");
+                        Console.ReadLine();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -261,6 +384,35 @@ namespace EnterpriseSystemApp
             Console.ReadLine();
         }
 
+        static void SearchPatientsByName()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Search Patients By Name =======");
+
+            Console.Write("Enter patient name or part of name: ");
+            string patientName = Console.ReadLine()?.Trim() ?? "";
+
+            var results = databaseManager.SearchPatientsByName(patientName);
+
+            Console.WriteLine();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("No matching patients found.");
+            }
+            else
+            {
+                foreach (string row in results)
+                {
+                    Console.WriteLine(row);
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
         static void UnpaidBalanceMenu()
         {
             bool inUnpaidMenu = true;
@@ -269,16 +421,19 @@ namespace EnterpriseSystemApp
             {
                 Console.Clear();
                 Console.WriteLine("======= Unpaid Balance Reports =======");
+                Console.WriteLine("0. Return To Search Menu");
                 Console.WriteLine("1. Lifetime Unpaid Balance");
                 Console.WriteLine("2. Year-End Unpaid Balance");
                 Console.WriteLine("3. Month-End Unpaid Balance");
-                Console.WriteLine("4. Return To Search Menu");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
 
                 switch (choice)
                 {
+                    case "0":
+                        inUnpaidMenu = false;
+                        break;
                     case "1":
                         ShowLifetimeUnpaidBalances();
                         break;
@@ -287,9 +442,6 @@ namespace EnterpriseSystemApp
                         break;
                     case "3":
                         ShowMonthEndUnpaidBalances();
-                        break;
-                    case "4":
-                        inUnpaidMenu = false;
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -379,6 +531,93 @@ namespace EnterpriseSystemApp
                 }
             }
 
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        // Methods for payments search options
+        static void PaymentsMenu()
+        {
+            bool inPaymentsMenu = true;
+
+            while (inPaymentsMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Payments Menu =======");
+                Console.WriteLine("0. Return To Search Menu");
+                Console.WriteLine("1. Out-Of-Network Insurance Payments");
+                Console.WriteLine("2. In-Network Insurance Payments");
+                Console.WriteLine("3. Self-Pay Payments");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "0":
+                        inPaymentsMenu = false;
+                        break;
+                    case "1":
+                        ShowOutOfNetworkInsurancePayments();
+                        break;
+                    case "2":
+                        ShowInNetworkInsurancePayments();
+                        break;
+                    case "3":
+                        ShowSelfPayPayments();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void ShowOutOfNetworkInsurancePayments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Out-Of-Network Insurance Payments =======");
+
+            var results = databaseManager.GetOutOfNetworkInsurancePayments();
+            DisplaySearchResults(results);
+        }
+
+        static void ShowInNetworkInsurancePayments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= In-Network Insurance Payments =======");
+
+            var results = databaseManager.GetInNetworkInsurancePayments();
+            DisplaySearchResults(results);
+        }
+
+        static void ShowSelfPayPayments()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Self-Pay Payments =======");
+
+            var results = databaseManager.GetSelfPayPayments();
+            DisplaySearchResults(results);
+        }
+
+        static void DisplaySearchResults(List<string> results)
+        {
+            Console.WriteLine();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("No records found.");
+            }
+            else
+            {
+                foreach (string row in results)
+                {
+                    Console.WriteLine(row);
+                }
+            }
+
+            Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
