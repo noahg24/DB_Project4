@@ -155,6 +155,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("4. Unpaid Balance Reports");
                 Console.WriteLine("5. Payments Menu");
                 Console.WriteLine("6. Treatment Reports");
+                Console.WriteLine("7. View Insurance Network");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -181,6 +182,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "6":
                         TreatmentMenu();
+                        break;
+                    case "7":
+                        ShowAllInsuranceNetworkProviders();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -263,6 +267,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("4. Patients Currently In Treatment");
                 Console.WriteLine("5. Patients Seen By Multiple Therapists");
                 Console.WriteLine("6. Patients With No Sessions");
+                Console.WriteLine("7. Patients with Insurance on the Insurance Network");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -289,6 +294,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "6":
                         ShowPatientsWithNoSessions();
+                        break;
+                    case "7":
+                        ShowPatientsWithInNetworkInsurance();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -321,6 +329,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("2. Session");
                 Console.WriteLine("3. Accounting");
                 Console.WriteLine("4. Treatment");
+                Console.WriteLine("5. Insurance Network");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -341,6 +350,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "4":
                         TreatmentUpdateMenu();
+                        break;
+                    case "5":
+                        InsuranceNetworkUpdateMenu();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -490,6 +502,50 @@ namespace EnterpriseSystemApp
                         break;
                 }
             }
+        }
+
+        static void InsuranceNetworkUpdateMenu()
+        {
+            bool inInsuranceMenu = true;
+
+            while (inInsuranceMenu)
+            {
+                Console.Clear();
+                Console.WriteLine("======= Insurance Network Update Menu =======");
+                Console.WriteLine("1. Add Insurance Provider");
+                Console.WriteLine("2. Delete Insurance Provider");
+                Console.WriteLine("0. Return To Update Menu");
+                Console.Write("Select an option: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        AddInsuranceProvider();
+                        break;
+
+                    case "2":
+                        DeleteInsuranceProvider();
+                        break;
+
+                    case "0":
+                        inInsuranceMenu = false;
+                        break;
+
+                    default:
+                        Console.WriteLine("Invalid option. Press Enter to try again.");
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void ShowAllInsuranceNetworkProviders()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Insurance Network Providers =======");
+            DisplaySearchResults(databaseManager.GetAllInsuranceNetworkProviders());
         }
 
         // Methods for database search options
@@ -672,6 +728,14 @@ namespace EnterpriseSystemApp
             DisplaySearchResults(databaseManager.GetPatientsWithNoSessions());
         }
 
+        static void ShowPatientsWithInNetworkInsurance()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Patients With In-Network Insurance =======");
+            DisplaySearchResults(databaseManager.GetPatientsWithInNetworkInsurance());
+        }
+
+        // Unpaid balance search options
         static void UnpaidBalanceMenu()
         {
             bool inUnpaidMenu = true;
@@ -1985,6 +2049,72 @@ namespace EnterpriseSystemApp
                 startDate,
                 endDate,
                 treatCode,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void AddInsuranceProvider()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Add Insurance Provider =======");
+
+            Console.Write("Insurance Provider Name: ");
+            string insuranceName = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(insuranceName))
+            {
+                Console.WriteLine("Insurance provider name cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.InsertInsuranceProvider(
+                insuranceName,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void DeleteInsuranceProvider()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Delete Insurance Provider =======");
+
+            Console.Write("Insurance Provider Name to delete: ");
+            string insuranceName = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(insuranceName))
+            {
+                Console.WriteLine("Insurance provider name cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.Write($"Are you sure you want to delete '{insuranceName}' from InsuranceNetwork? (Y/N): ");
+            string confirm = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+            if (confirm != "Y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.DeleteInsuranceProvider(
+                insuranceName,
                 out string message
             );
 
