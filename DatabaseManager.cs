@@ -257,13 +257,41 @@ namespace EnterpriseSystemApp
 
         public List<string> GetTherapistsPerTreatment()
         {
-            return RunStringQuery(@"
-                SELECT ps_treatid,
-                    COUNT(DISTINCT ps_theraid) AS num_therapists,
-                    COUNT(ps_theraid) AS num_sessions
-                FROM PatientSession
-                GROUP BY ps_treatid
-                ORDER BY num_therapists DESC;");
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT ps_treatid,
+                        COUNT(DISTINCT ps_theraid) AS num_therapists,
+                        COUNT(ps_theraid) AS num_sessions
+                    FROM PatientSession
+                    GROUP BY ps_treatid
+                    ORDER BY num_therapists DESC;";
+
+                using var command = new MySqlCommand(sql, connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string treatId = reader["ps_treatid"].ToString() ?? "";
+                    string therapistCount = reader["num_therapists"].ToString() ?? "";
+                    string sessionCount = reader["num_sessions"].ToString() ?? "";
+
+                    results.Add(
+                        $"Treatment ID: {treatId} | Therapists Used: {therapistCount} | Total Sessions: {sessionCount}"
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
         }
 
         public List<string> GetAverageTherapistsPerTreatment()
@@ -751,17 +779,6 @@ namespace EnterpriseSystemApp
                 ORDER BY treatment_count DESC;");
         }
 
-        public List<string> GetTop5PatientsTreatments()
-        {
-            return RunStringQuery(@"
-                SELECT tr_patid, p_patname, COUNT(*) AS treatment_count
-                FROM Treatment, Patient
-                WHERE tr_patid = p_patid
-                GROUP BY tr_patid, p_patname
-                ORDER BY treatment_count DESC
-                LIMIT 5;");
-        }
-
         public List<string> GetOngoingTreatments()
         {
             return RunStringQuery(@"
@@ -792,18 +809,6 @@ namespace EnterpriseSystemApp
                 FROM Treatment
                 GROUP BY DATE_FORMAT(tr_startdate, '%b %Y')
                 ORDER BY treatments_started DESC;");
-        }
-
-        public List<string> GetIncompleteTreatments()
-        {
-            return RunStringQuery(@"
-                SELECT DISTINCT t1.tr_patid, p_patname
-                FROM Treatment t1, Treatment t2, Patient p
-                WHERE t1.tr_patid = t2.tr_patid
-                AND t1.tr_treatid <> t2.tr_treatid
-                AND t1.tr_startdate < IFNULL(t2.tr_enddate, CURDATE())
-                AND t2.tr_startdate < t1.tr_startdate
-                AND t1.tr_patid = p.p_patid;");
         }
 
         public List<string> GetPatientsNeverPursuedTreatment()

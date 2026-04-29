@@ -963,12 +963,10 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("======= Treatment Reports =======");
                 Console.WriteLine("0. Return To Search Menu");
                 Console.WriteLine("1. Number Of Treatments Per Patient");
-                Console.WriteLine("2. Top 5 Patients With Highest Number Of Treatments");
-                Console.WriteLine("3. Number Of On-Going Treatments");
-                Console.WriteLine("4. Average Number Of Treatments Per Patient");
-                Console.WriteLine("5. Peak Months For Treatment");
-                Console.WriteLine("6. Number Of Incomplete Treatments");
-                Console.WriteLine("7. Patients Who Never Pursued Treatment");
+                Console.WriteLine("2. Number Of On-Going Treatments");
+                Console.WriteLine("3. Average Number Of Treatments Per Patient");
+                Console.WriteLine("4. Peak Months For Treatment");
+                Console.WriteLine("5. Patients Who Never Pursued Treatment");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -982,21 +980,15 @@ namespace EnterpriseSystemApp
                         ShowTreatmentCountPerPatient();
                         break;
                     case "2":
-                        ShowTop5PatientsTreatments();
-                        break;
-                    case "3":
                         ShowOngoingTreatments();
                         break;
-                    case "4":
+                    case "3":
                         ShowAverageTreatmentsPerPatient();
                         break;
-                    case "5":
+                    case "4":
                         ShowPeakMonthsForTreatment();
                         break;
-                    case "6":
-                        ShowIncompleteTreatments();
-                        break;
-                    case "7":
+                    case "5":
                         ShowPatientsNeverPursuedTreatment();
                         break;
                     default:
@@ -1012,13 +1004,6 @@ namespace EnterpriseSystemApp
             Console.Clear();
             Console.WriteLine("======= Number Of Treatments Per Patient =======");
             DisplaySearchResults(databaseManager.GetTreatmentCountPerPatient());
-        }
-
-        static void ShowTop5PatientsTreatments()
-        {
-            Console.Clear();
-            Console.WriteLine("======= Top 5 Patients By Treatments =======");
-            DisplaySearchResults(databaseManager.GetTop5PatientsTreatments());
         }
 
         static void ShowOngoingTreatments()
@@ -1040,13 +1025,6 @@ namespace EnterpriseSystemApp
             Console.Clear();
             Console.WriteLine("======= Peak Months For Treatment =======");
             DisplaySearchResults(databaseManager.GetPeakMonthsForTreatment());
-        }
-
-        static void ShowIncompleteTreatments()
-        {
-            Console.Clear();
-            Console.WriteLine("======= Incomplete Treatments =======");
-            DisplaySearchResults(databaseManager.GetIncompleteTreatments());
         }
 
         static void ShowPatientsNeverPursuedTreatment()
