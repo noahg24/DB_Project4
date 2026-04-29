@@ -1494,6 +1494,230 @@ namespace EnterpriseSystemApp
             }
         }
 
+        public List<string> GetAllSessionsForPatient(string patientId)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT ps_sessid, ps_sessdate, ps_theraid, ps_treatcode, ps_treatid
+                    FROM PatientSession
+                    WHERE ps_patid = @patientId
+                    ORDER BY ps_sessdate DESC;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string sessionId = reader["ps_sessid"].ToString() ?? "";
+                    string sessionDate = Convert.ToDateTime(reader["ps_sessdate"]).ToString("yyyy-MM-dd");
+                    string therapistId = reader["ps_theraid"].ToString() ?? "";
+                    string treatCode = reader["ps_treatcode"].ToString() ?? "";
+                    string treatId = reader["ps_treatid"].ToString() ?? "";
+
+                    results.Add(
+                        $"Session ID: {sessionId} | Date: {sessionDate} | Therapist: {therapistId} | Treat Code: {treatCode} | Treatment ID: {treatId}"
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public bool SessionBelongsToPatient(string sessionId, string patientId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT COUNT(*)
+                    FROM PatientSession
+                    WHERE ps_sessid = @sessionId
+                    AND ps_patid = @patientId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+                return count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public List<string> GetAccountingTransactionsForSession(string sessionId)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT a_txid, a_sessid, a_txdate, a_baldue, a_amtcolld, a_payer
+                    FROM Accounting
+                    WHERE a_sessid = @sessionId
+                    ORDER BY a_txdate DESC;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string txId = reader["a_txid"].ToString() ?? "";
+                    string sessId = reader["a_sessid"].ToString() ?? "";
+                    string txDate = Convert.ToDateTime(reader["a_txdate"]).ToString("yyyy-MM-dd");
+                    decimal balDue = Convert.ToDecimal(reader["a_baldue"]);
+                    decimal amtColld = Convert.ToDecimal(reader["a_amtcolld"]);
+                    string payer = reader["a_payer"].ToString() ?? "";
+
+                    results.Add(
+                        $"Transaction ID: {txId} | Session ID: {sessId} | Date: {txDate} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Payer: {payer}"
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public bool AccountingTransactionBelongsToSession(string transactionId, string sessionId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT COUNT(*)
+                    FROM Accounting
+                    WHERE a_txid = @transactionId
+                    AND a_sessid = @sessionId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+                return count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public string GetSingleAccountingTransaction(string transactionId, string sessionId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT a_txid, a_sessid, a_txdate, a_baldue, a_amtcolld, a_payer
+                    FROM Accounting
+                    WHERE a_txid = @transactionId
+                    AND a_sessid = @sessionId
+                    LIMIT 1;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                using var reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    string txId = reader["a_txid"].ToString() ?? "";
+                    string sessId = reader["a_sessid"].ToString() ?? "";
+                    string txDate = Convert.ToDateTime(reader["a_txdate"]).ToString("yyyy-MM-dd");
+                    decimal balDue = Convert.ToDecimal(reader["a_baldue"]);
+                    decimal amtColld = Convert.ToDecimal(reader["a_amtcolld"]);
+                    string payer = reader["a_payer"].ToString() ?? "";
+
+                    return $"Transaction ID: {txId} | Session ID: {sessId} | Date: {txDate} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Payer: {payer}";
+                }
+
+                return "";
+            }
+            catch (Exception ex)
+            {
+                return $"Database error: {ex.Message}";
+            }
+        }
+
+        public bool UpdateAccountingTransaction(
+            string transactionId,
+            string sessionId,
+            decimal newBalanceDue,
+            decimal newAmountCollected,
+            string newPayer,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    UPDATE Accounting
+                    SET a_baldue = @newBalanceDue,
+                        a_amtcolld = @newAmountCollected,
+                        a_payer = @newPayer
+                    WHERE a_txid = @transactionId
+                    AND a_sessid = @sessionId;";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@newBalanceDue", newBalanceDue);
+                command.Parameters.AddWithValue("@newAmountCollected", newAmountCollected);
+                command.Parameters.AddWithValue("@newPayer", newPayer);
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Accounting transaction updated successfully.";
+                    return true;
+                }
+
+                message = "Accounting transaction was not updated.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
+        }
+
         public bool InsertTreatment(
             string therapistId,
             string patientId,

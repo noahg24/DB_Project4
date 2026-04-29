@@ -435,6 +435,7 @@ namespace EnterpriseSystemApp
                 Console.WriteLine("0. Return To Update Menu");
                 Console.WriteLine("1. Add New Accounting Transaction");
                 Console.WriteLine("2. Update Accounting Transaction Payment");
+                Console.WriteLine("3. Update Accounting Transaction Details");
                 Console.Write("Select an option: ");
 
                 string? choice = Console.ReadLine();
@@ -449,6 +450,9 @@ namespace EnterpriseSystemApp
                         break;
                     case "2":
                         UpdateAccountingTransactionPayment();
+                        break;
+                    case "3":
+                        UpdateAccountingTransactionInfo();
                         break;
                     default:
                         Console.WriteLine("Invalid option. Press Enter to try again.");
@@ -1698,6 +1702,196 @@ namespace EnterpriseSystemApp
 
             Console.WriteLine();
             Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        static void UpdateAccountingTransactionInfo()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Update Accounting Transaction =======");
+
+            Console.Write("Enter Patient ID: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                Console.WriteLine("Patient ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.PatientExists(patientId))
+            {
+                Console.WriteLine("No patient found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Sessions for this patient:");
+
+            List<string> sessions = databaseManager.GetAllSessionsForPatient(patientId);
+
+            if (sessions.Count == 0)
+            {
+                Console.WriteLine("No sessions found for this patient.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            foreach (string session in sessions)
+            {
+                Console.WriteLine(session);
+            }
+
+            Console.WriteLine();
+            Console.Write("Enter Session ID: ");
+            string sessionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                Console.WriteLine("Session ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.SessionBelongsToPatient(sessionId, patientId))
+            {
+                Console.WriteLine("That session does not belong to the selected patient.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Accounting transactions for this session:");
+
+            List<string> transactions = databaseManager.GetAccountingTransactionsForSession(sessionId);
+
+            if (transactions.Count == 0)
+            {
+                Console.WriteLine("No accounting transactions found for this session.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            foreach (string transaction in transactions)
+            {
+                Console.WriteLine(transaction);
+            }
+
+            Console.WriteLine();
+            Console.Write("Enter Transaction ID to update: ");
+            string transactionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                Console.WriteLine("Transaction ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.AccountingTransactionBelongsToSession(transactionId, sessionId))
+            {
+                Console.WriteLine("That transaction does not belong to the selected session.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Current Transaction Information:");
+            string currentInfo = databaseManager.GetSingleAccountingTransaction(transactionId, sessionId);
+
+            if (currentInfo.StartsWith("Database error:"))
+            {
+                Console.WriteLine(currentInfo);
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine(currentInfo);
+            Console.WriteLine();
+            Console.WriteLine("Only Balance Due, Amount Collected, and Payer can be changed.");
+            Console.WriteLine();
+
+            Console.Write("New Balance Due: ");
+            string balanceInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!decimal.TryParse(balanceInput, out decimal newBalanceDue))
+            {
+                Console.WriteLine("Invalid balance due amount.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (newBalanceDue < 0)
+            {
+                Console.WriteLine("Balance due cannot be negative.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("New Amount Collected: ");
+            string collectedInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!decimal.TryParse(collectedInput, out decimal newAmountCollected))
+            {
+                Console.WriteLine("Invalid amount collected.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (newAmountCollected < 0)
+            {
+                Console.WriteLine("Amount collected cannot be negative.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("New Payer insurance name or patient ID: ");
+            string newPayer = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(newPayer))
+            {
+                Console.WriteLine("Payer cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.UpdateAccountingTransaction(
+                transactionId,
+                sessionId,
+                newBalanceDue,
+                newAmountCollected,
+                newPayer,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+
+            if (success)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Updated Transaction Information:");
+                Console.WriteLine(databaseManager.GetSingleAccountingTransaction(transactionId, sessionId));
+            }
+
+            Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
         }
