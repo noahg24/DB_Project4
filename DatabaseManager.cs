@@ -640,11 +640,10 @@ namespace EnterpriseSystemApp
             return results;
         }
 
-        public List<UnpaidBalanceResult> GetCustomRangeUnpaidBalances(
-            DateTime startDate,
-            DateTime endDate)
+        public List<string> GetCustomRangeUnpaidBalances(DateTime startDate, DateTime endDate)
         {
-            List<UnpaidBalanceResult> results = new List<UnpaidBalanceResult>();
+            List<string> results = new List<string>();
+            decimal totalOutstanding = 0;
 
             try
             {
@@ -664,7 +663,6 @@ namespace EnterpriseSystemApp
                     ORDER BY ps_sessid;";
 
                 using var command = new MySqlCommand(sql, connection);
-
                 command.Parameters.AddWithValue("@startDate", startDate);
                 command.Parameters.AddWithValue("@endDate", endDate);
 
@@ -673,31 +671,23 @@ namespace EnterpriseSystemApp
                 while (reader.Read())
                 {
                     string sessionId = reader["session_id"].ToString() ?? "";
+                    decimal balDue = reader["balance_due"] != DBNull.Value ? Convert.ToDecimal(reader["balance_due"]) : 0;
+                    decimal amtColld = reader["amount_collected"] != DBNull.Value ? Convert.ToDecimal(reader["amount_collected"]) : 0;
 
-                    decimal balanceDue =
-                        reader["balance_due"] == DBNull.Value
-                        ? 0
-                        : Convert.ToDecimal(reader["balance_due"]);
-
-                    decimal amountCollected =
-                        reader["amount_collected"] == DBNull.Value
-                        ? 0
-                        : Convert.ToDecimal(reader["amount_collected"]);
+                    decimal outstanding = balDue - amtColld;
+                    totalOutstanding += outstanding;
 
                     results.Add(
-                        new UnpaidBalanceResult(
-                            sessionId,
-                            balanceDue,
-                            amountCollected));
+                        $"Session ID: {sessionId} | Balance Due: {balDue:C} | Amount Collected: {amtColld:C} | Unpaid: {outstanding:C}"
+                    );
                 }
+
+                results.Add("--------------------------------------------------");
+                results.Add($"COMBINED TOTAL UNPAID BALANCE: {totalOutstanding:C}");
             }
             catch (Exception ex)
             {
-                results.Add(
-                    new UnpaidBalanceResult(
-                        $"Database error: {ex.Message}",
-                        0,
-                        0));
+                results.Add($"Database error: {ex.Message}");
             }
 
             return results;

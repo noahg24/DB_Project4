@@ -791,12 +791,7 @@ namespace EnterpriseSystemApp
                 return;
             }
 
-            var results =
-                databaseManager.GetCustomRangeUnpaidBalances(
-                    startDate,
-                    endDate);
-
-            DisplayUnpaidBalanceResults(results);
+            DisplaySearchResults(databaseManager.GetCustomRangeUnpaidBalances(startDate, endDate));
         }
 
         static void ShowLifetimeUnpaidBalanceByPatient()
