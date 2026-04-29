@@ -335,9 +335,7 @@ namespace EnterpriseSystemApp
                         inAccountingMenu = false;
                         break;
                     case "1":
-                        Console.WriteLine("Add New Accounting Transaction functionality will be added later.");
-                        Console.WriteLine("Press Enter to continue...");
-                        Console.ReadLine();
+                        AddNewAccountingTransaction();
                         break;
                     case "2":
                         Console.WriteLine("Delete Accounting Transaction functionality will be added later.");
@@ -968,6 +966,139 @@ namespace EnterpriseSystemApp
                 newName,
                 newInsuranceName,
                 newInsurancePolicy,
+                out string message
+            );
+
+            Console.WriteLine();
+            Console.WriteLine(message);
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+        }
+
+        // Update Accounting Methods
+        static void AddNewAccountingTransaction()
+        {
+            Console.Clear();
+            Console.WriteLine("======= Add New Accounting Transaction =======");
+
+            Console.Write("Enter Patient ID: ");
+            string patientId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                Console.WriteLine("Patient ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.PatientExists(patientId))
+            {
+                Console.WriteLine("No patient found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Sessions for this patient:");
+            var sessions = databaseManager.GetSessionsForPatient(patientId);
+
+            if (sessions.Count == 0)
+            {
+                Console.WriteLine("No sessions found for this patient.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            foreach (string session in sessions)
+            {
+                Console.WriteLine(session);
+            }
+
+            Console.WriteLine();
+            Console.Write("Enter Session ID for this transaction: ");
+            string sessionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                Console.WriteLine("Session ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            if (!databaseManager.SessionExists(sessionId))
+            {
+                Console.WriteLine("No session found with that ID.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Transaction ID: ");
+            string transactionId = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                Console.WriteLine("Transaction ID cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Transaction Date (YYYY-MM-DD): ");
+            string dateInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!DateTime.TryParse(dateInput, out DateTime transactionDate))
+            {
+                Console.WriteLine("Invalid date format.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Balance Due: ");
+            string balanceInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!decimal.TryParse(balanceInput, out decimal balanceDue))
+            {
+                Console.WriteLine("Invalid balance due amount.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Amount Collected: ");
+            string collectedInput = Console.ReadLine()?.Trim() ?? "";
+
+            if (!decimal.TryParse(collectedInput, out decimal amountCollected))
+            {
+                Console.WriteLine("Invalid amount collected.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Write("Payer insurance name or patient ID: ");
+            string payer = Console.ReadLine()?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(payer))
+            {
+                Console.WriteLine("Payer cannot be blank.");
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            bool success = databaseManager.InsertAccountingTransaction(
+                transactionId,
+                sessionId,
+                transactionDate,
+                balanceDue,
+                amountCollected,
+                payer,
                 out string message
             );
 

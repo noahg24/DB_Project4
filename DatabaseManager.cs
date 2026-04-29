@@ -638,13 +638,14 @@ namespace EnterpriseSystemApp
                 ) t1;");
         }
 
+        // CHECK HERE
         public List<string> GetPeakMonthsForTreatment()
         {
             return RunStringQuery(@"
                 SELECT DATE_FORMAT(tr_startdate, '%b %Y') AS month,
                     COUNT(*) AS treatments_started
                 FROM Treatment
-                GROUP BY YEAR(tr_startdate), MONTH(tr_startdate)
+                GROUP BY DATE_FORMAT(tr_startdate, '%b %Y')
                 ORDER BY treatments_started DESC;");
         }
 
@@ -701,6 +702,142 @@ namespace EnterpriseSystemApp
             }
 
             return results;
+        }
+
+        // Update PatientSession methods
+        public bool PatientExists(string patientId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT COUNT(*)
+                    FROM Patient
+                    WHERE p_patid = @patientId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+                return count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public List<string> GetSessionsForPatient(string patientId)
+        {
+            List<string> results = new List<string>();
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT ps_sessid, ps_sessdate, ps_theraid, ps_treatcode
+                    FROM PatientSession
+                    WHERE ps_patid = @patientId
+                    ORDER BY ps_sessdate DESC;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@patientId", patientId);
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string sessionId = reader["ps_sessid"].ToString() ?? "";
+                    string sessionDate = Convert.ToDateTime(reader["ps_sessdate"]).ToString("yyyy-MM-dd");
+                    string therapistId = reader["ps_theraid"].ToString() ?? "";
+                    string treatCode = reader["ps_treatcode"].ToString() ?? "";
+
+                    results.Add($"Session ID: {sessionId} | Date: {sessionDate} | Therapist: {therapistId} | Treat Code: {treatCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Add($"Database error: {ex.Message}");
+            }
+
+            return results;
+        }
+
+        public bool SessionExists(string sessionId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT COUNT(*)
+                    FROM PatientSession
+                    WHERE ps_sessid = @sessionId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+                return count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool InsertAccountingTransaction(
+            string transactionId,
+            string sessionId,
+            DateTime transactionDate,
+            decimal balanceDue,
+            decimal amountCollected,
+            string payer,
+            out string message)
+        {
+            message = "";
+
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    INSERT INTO Accounting
+                        (a_txid, a_sessid, a_txdate, a_baldue, a_amtcolld, a_payer)
+                    VALUES
+                        (@transactionId, @sessionId, @transactionDate, @balanceDue, @amountCollected, @payer);";
+
+                using var command = new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@transactionId", transactionId);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+                command.Parameters.AddWithValue("@transactionDate", transactionDate);
+                command.Parameters.AddWithValue("@balanceDue", balanceDue);
+                command.Parameters.AddWithValue("@amountCollected", amountCollected);
+                command.Parameters.AddWithValue("@payer", payer);
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 1)
+                {
+                    message = "Accounting transaction added successfully.";
+                    return true;
+                }
+
+                message = "Accounting transaction was not added.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = $"Database error: {ex.Message}";
+                return false;
+            }
         }
     }
 }
