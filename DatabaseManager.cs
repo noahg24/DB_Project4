@@ -599,18 +599,20 @@ namespace EnterpriseSystemApp
         public List<string> GetTreatmentCountPerPatient()
         {
             return RunStringQuery(@"
-                SELECT tr_patid, COUNT(*) AS treatment_count
-                FROM Treatment
-                GROUP BY tr_patid
+                SELECT tr_patid, p_patname, COUNT(*) AS treatment_count
+                FROM Treatment, Patient
+                WHERE tr_patid = p_patid
+                GROUP BY tr_patid, p_patname
                 ORDER BY treatment_count DESC;");
         }
 
         public List<string> GetTop5PatientsTreatments()
         {
             return RunStringQuery(@"
-                SELECT tr_patid, COUNT(*) AS treatment_count
-                FROM Treatment
-                GROUP BY tr_patid
+                SELECT tr_patid, p_patname, COUNT(*) AS treatment_count
+                FROM Treatment, Patient
+                WHERE tr_patid = p_patid
+                GROUP BY tr_patid, p_patname
                 ORDER BY treatment_count DESC
                 LIMIT 5;");
         }
@@ -618,9 +620,11 @@ namespace EnterpriseSystemApp
         public List<string> GetOngoingTreatments()
         {
             return RunStringQuery(@"
-                SELECT DISTINCT tr_patid AS treatment_ongoing
-                FROM Treatment
-                WHERE tr_enddate IS NULL;");
+                SELECT DISTINCT tr_patid, p_patname
+                FROM Treatment, Patient
+                WHERE tr_enddate IS NULL
+                    AND tr_patid = p_patid
+                ORDER BY p_patname;");
         }
 
         public List<string> GetAverageTreatmentsPerPatient()
@@ -647,18 +651,19 @@ namespace EnterpriseSystemApp
         public List<string> GetIncompleteTreatments()
         {
             return RunStringQuery(@"
-                SELECT DISTINCT t1.tr_patid
-                FROM Treatment t1, Treatment t2
+                SELECT DISTINCT t1.tr_patid, p_patname
+                FROM Treatment t1, Treatment t2, Patient p
                 WHERE t1.tr_patid = t2.tr_patid
                 AND t1.tr_treatid <> t2.tr_treatid
                 AND t1.tr_startdate < IFNULL(t2.tr_enddate, CURDATE())
-                AND t2.tr_startdate < t1.tr_startdate;");
+                AND t2.tr_startdate < t1.tr_startdate
+                AND t1.tr_patid = p.p_patid;");
         }
 
         public List<string> GetPatientsNeverPursuedTreatment()
         {
             return RunStringQuery(@"
-                SELECT p_patid
+                SELECT p_patid, p_patname
                 FROM Patient
                 WHERE p_patid NOT IN (
                     SELECT ps_patid

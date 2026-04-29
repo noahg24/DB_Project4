@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 using MySqlX.XDevAPI;
 
 namespace EnterpriseSystemApp
@@ -653,17 +654,66 @@ namespace EnterpriseSystemApp
         {
             Console.WriteLine();
 
-            if (results.Count == 0)
+            int rowCount = results.Count;
+
+            if (rowCount == 0)
             {
                 Console.WriteLine("No records found.");
+                Console.WriteLine();
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine($"Total Rows Found: {rowCount}");
+            Console.WriteLine();
+
+            int rowsToShow;
+
+            if (rowCount < 10)
+            {
+                rowsToShow = rowCount;
             }
             else
             {
-                foreach (string row in results)
+                Console.WriteLine("Choose display amount:");
+                Console.WriteLine("1. Top 10");
+                Console.WriteLine("2. Top 100");
+                Console.WriteLine("3. Show All");
+                Console.Write("Selection: ");
+
+                string? choice = Console.ReadLine();
+
+                switch (choice)
                 {
-                    Console.WriteLine(row);
+                    case "1":
+                        rowsToShow = Math.Min(10, rowCount);
+                        break;
+
+                    case "2":
+                        rowsToShow = Math.Min(100, rowCount);
+                        break;
+
+                    case "3":
+                        rowsToShow = rowCount;
+                        break;
+
+                    default:
+                        rowsToShow = Math.Min(10, rowCount);
+                        break;
                 }
+
+                Console.WriteLine();
             }
+
+            for (int i = 0; i < rowsToShow; i++)
+            {
+                Console.WriteLine(results[i]);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"Displayed Rows: {rowsToShow}");
+            Console.WriteLine($"Total Rows Available: {rowCount}");
 
             Console.WriteLine();
             Console.WriteLine("Press Enter to continue...");
