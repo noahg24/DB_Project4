@@ -6,7 +6,7 @@ using MySqlX.XDevAPI;
 
 namespace EnterpriseSystemApp
 {
-    class Program
+    partial class Program
     {
         static AccountManager accountManager = new AccountManager();
         // DatabaseManager is initialized but not yet used in the application flow

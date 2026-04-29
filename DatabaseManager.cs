@@ -4,7 +4,7 @@ using MySqlConnector;
 
 namespace EnterpriseSystemApp
 {
-    public class DatabaseManager
+    public partial class DatabaseManager
     {
         private readonly string connectionString;
 
