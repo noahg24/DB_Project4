@@ -1,2 +1,3 @@
 victor|Pa55word!|admin
 noah|Pa55word!|admin
+kevin|B453user!|base
