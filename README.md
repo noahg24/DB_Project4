@@ -106,7 +106,7 @@ connectionString = "Server=localhost;Database=patient_portal;User ID=root;Passwo
 Make sure the database name is:
 patient_portal
 
-If not, change that name in the connectionString as well
+If your database is named differently (like my_patient), change that name in the connectionString as well
 
 ## Running the Program
 From the project folder, run:
