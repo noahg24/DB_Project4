@@ -4,6 +4,6 @@ namespace EnterpriseSystemApp
 {
     partial class Program
     {
-
+        
     }
 }

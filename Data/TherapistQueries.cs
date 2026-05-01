@@ -148,5 +148,29 @@ namespace EnterpriseSystemApp
                     HAVING COUNT(DISTINCT ps_theraid) > 1
                 ) t1;");
         }
+
+        public bool TherapistExists(string therapistId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(connectionString);
+                connection.Open();
+
+                string sql = @"
+                    SELECT COUNT(*)
+                    FROM Therapist
+                    WHERE t_theraid = @therapistId;";
+
+                using var command = new MySqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@therapistId", therapistId);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+                return count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
