@@ -2,7 +2,7 @@
 
 MyPatient is a C# console-based database application for managing patients, therapists, treatments, sessions, accounting records, and insurance network information.
 
-The application connects to a MySQL database and runs manually written SQL queries through C#.
+The application connects to a MySQL database and runs manually written SQL queries through C#. Was originally created and ran on a Windows machine, but should be compatible with any OS that supports .NET and MySQL.
 
 ---
 
