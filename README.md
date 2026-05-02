@@ -23,25 +23,29 @@ dotnet --version
 
 ## Database Setup
 1. Open MySQL Workbench
+
 Open MySQL Workbench and connect to your local MySQL server.
 
 2. Create the database and schema
+
 Find the following SQL script in the SQL folder of this repository:
- create_schema_tables.sql
+create_schema_tables.sql
 Run the full script in MySQL Workbench.
 This will create the schema and required tables, such as:
-Patient
-Therapist
-Treatment
-PatientSession
-Accounting
-InsuranceNetwork
-ListSkills
-TherapistSkills
-SkillTreatcodeMap
+- Patient
+- Therapist
+- Treatment
+- PatientSession
+- Accounting
+- InsuranceNetwork
+- ListSkills
+- TherapistSkills
+- SkillTreatcodeMap
 
-4. Import data
+3. Import data
+
 Import the CSV files into the matching MySQL tables.
+
 Recommended import order:
 1. InsuranceNetwork
 2. Therapist
@@ -51,20 +55,24 @@ Recommended import order:
 6. SkillTreatcodeMap
 7. Treatment
 8. PatientSession
-9. Accounting
+
+
 This order helps avoid foreign key errors.
-For InsuranceNetwork.csv specifically, information had to be manually uploaded. In SQL is another file for importing that data specifically. For the rest, do the following in MySQL Workbench:
-Right-click the table
-Select Table Data Import Wizard
-Choose the matching CSV file
-Map columns carefully
-Run the import
+
+For InsuranceNetwork.csv specifically, information has to be manually uploaded. In SQL is another file for importing that data specifically. For the rest, do the following in MySQL Workbench:
+
+- Right-click the table
+- Select Table Data Import Wizard
+- Choose the matching CSV file
+- Map columns carefully
+- Run the import
+
 After importing, verify each table:
-SELECT COUNT(*) FROM Patient;
-SELECT COUNT(*) FROM Therapist;
-SELECT COUNT(*) FROM Treatment;
-SELECT COUNT(*) FROM PatientSession;
-SELECT COUNT(*) FROM Accounting;
+- SELECT COUNT(*) FROM Patient;
+- SELECT COUNT(*) FROM Therapist;
+- SELECT COUNT(*) FROM Treatment;
+- SELECT COUNT(*) FROM PatientSession;
+- SELECT COUNT(*) FROM Accounting;
 
 
 ## C# Project Setup
