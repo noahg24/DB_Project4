@@ -25,18 +25,11 @@ dotnet --version
 1. Open MySQL Workbench
 Open MySQL Workbench and connect to your local MySQL server.
 
-2. Create the database
-Run:
-CREATE DATABASE patient_portal;
-USE patient_portal;
-If the database already exists, just run:
-USE patient_portal;
-
-3. Run the schema script
-Open the project schema file, usually named something like:
-schema.sql
+2. Create the database and schema
+Find the following SQL script in the SQL folder of this repository:
+ create_schema_tables.sql
 Run the full script in MySQL Workbench.
-This will create the required tables, such as:
+This will create the schema and required tables, such as:
 Patient
 Therapist
 Treatment
