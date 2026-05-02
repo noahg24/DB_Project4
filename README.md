@@ -53,7 +53,7 @@ Recommended import order:
 8. PatientSession
 9. Accounting
 This order helps avoid foreign key errors.
-In MySQL Workbench:
+For InsuranceNetwork.csv specifically, information had to be manually uploaded. In SQL is another file for importing that data specifically. For the rest, do the following in MySQL Workbench:
 Right-click the table
 Select Table Data Import Wizard
 Choose the matching CSV file
@@ -65,6 +65,7 @@ SELECT COUNT(*) FROM Therapist;
 SELECT COUNT(*) FROM Treatment;
 SELECT COUNT(*) FROM PatientSession;
 SELECT COUNT(*) FROM Accounting;
+
 
 ## C# Project Setup
 1. Open Command Prompt
